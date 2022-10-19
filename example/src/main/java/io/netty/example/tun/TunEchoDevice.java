@@ -31,7 +31,7 @@ public class TunEchoDevice {
 
     static {
         try {
-            ADDRESS = InetAddress.getByName(System.getProperty("address", "10.10.10.10"));
+            ADDRESS = InetAddress.getByName(System.getProperty("address", "10.10.10.10")); // fc00::1
         }
         catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -58,9 +58,9 @@ public class TunEchoDevice {
             System.out.println("TUN device created: " + name);
 
             if (PlatformDependent.isOsx()) {
-                exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress());
+                exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress()); // sudo ifconfig utun3 inet6 add fc00::1/128
                 exec("/sbin/ifconfig", name, "up");
-                exec("/sbin/route", "add", "-net", ADDRESS.getHostAddress() + '/' + 32, "-iface", name);
+                exec("/sbin/route", "add", "-net", ADDRESS.getHostAddress() + '/' + 32, "-iface", name); // sudo /sbin/route add -net fc00::1 -iface utun3 // Überhaupt notwendig bei nur einer IP?
             }
 
             System.out.println("Address assigned: " + ADDRESS.getHostAddress());
