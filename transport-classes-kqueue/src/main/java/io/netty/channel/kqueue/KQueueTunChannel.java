@@ -2,14 +2,10 @@ package io.netty.channel.kqueue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.AddressedEnvelope;
-import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
 import io.netty.channel.socket.TunPacket;
-import io.netty.channel.unix.DatagramSocketAddress;
 import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.IovArray;
 import io.netty.channel.unix.UnixChannelUtil;
@@ -17,15 +13,13 @@ import io.netty.util.UncheckedBooleanSupplier;
 import io.netty.util.internal.StringUtil;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
 
-public class KQueueTunChannel extends AbstractKQueueChannel {
+public class KQueueTunChannel extends AbstractKQueueMessageChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
@@ -41,14 +35,13 @@ public class KQueueTunChannel extends AbstractKQueueChannel {
         return new KQueueTunChannelUnsafe();
     }
 
-    // FIXME: ist das TUN device wirklich message-oriented und nicht byte-oriented?
-    private boolean doWriteMessage(final Object msg) throws Exception {
+    protected boolean doWriteMessage(final Object msg) throws Exception {
         final ByteBuf data;
         if (msg instanceof TunPacket) {
-            @SuppressWarnings("unchecked")
             TunPacket packet = (TunPacket) msg;
             data = packet.content();
-        } else {
+        }
+        else {
             data = (ByteBuf) msg;
         }
 
@@ -61,14 +54,16 @@ public class KQueueTunChannel extends AbstractKQueueChannel {
         if (data.hasMemoryAddress()) {
             long memoryAddress = data.memoryAddress();
             writtenBytes = socket.writeAddress(memoryAddress, data.readerIndex(), data.writerIndex());
-        } else if (data.nioBufferCount() > 1) {
+        }
+        else if (data.nioBufferCount() > 1) {
             IovArray array = ((KQueueEventLoop) eventLoop()).cleanArray();
             array.add(data, data.readerIndex(), data.readableBytes());
             int cnt = array.count();
             assert cnt != 0;
 
             writtenBytes = socket.writevAddresses(array.memoryAddress(0), cnt);
-        } else {
+        }
+        else {
             ByteBuffer nioData = data.internalNioBuffer(data.readerIndex(), data.readableBytes());
             writtenBytes = socket.write(nioData, nioData.position(), nioData.limit());
         }
@@ -77,45 +72,7 @@ public class KQueueTunChannel extends AbstractKQueueChannel {
     }
 
     @Override
-    protected void doWrite(final ChannelOutboundBuffer in) throws Exception {
-        int maxMessagesPerWrite = maxMessagesPerWrite();
-        while (maxMessagesPerWrite > 0) {
-            Object msg = in.current();
-            if (msg == null) {
-                break;
-            }
-
-            try {
-                boolean done = false;
-                for (int i = config().getWriteSpinCount(); i > 0; --i) {
-                    if (doWriteMessage(msg)) {
-                        done = true;
-                        break;
-                    }
-                }
-
-                if (done) {
-                    in.remove();
-                    maxMessagesPerWrite--;
-                } else {
-                    break;
-                }
-            } catch (IOException e) {
-                maxMessagesPerWrite--;
-
-                // Continue on write error as a DatagramChannel can write to multiple remote peers
-                //
-                // See https://github.com/netty/netty/issues/2665
-                in.remove(e);
-            }
-        }
-
-        // Whether all messages were written or not.
-        writeFilter(!in.isEmpty());
-    }
-
-    @Override
-    protected Object filterOutboundMessage(final Object msg) throws Exception {
+    protected Object filterOutboundMessage(final Object msg) {
         if (msg instanceof Tun4Packet) {
             Tun4Packet packet = (Tun4Packet) msg;
             ByteBuf content = packet.content();
@@ -149,7 +106,6 @@ public class KQueueTunChannel extends AbstractKQueueChannel {
         active = true;
     }
 
-    // FIXME: dedup code mit KQueueDatagramChannelUnsafe?
     final class KQueueTunChannelUnsafe extends AbstractKQueueUnsafe {
         @Override
         void readReady(final KQueueRecvByteAllocatorHandle allocHandle) {

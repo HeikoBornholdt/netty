@@ -18,7 +18,6 @@ package io.netty.channel.kqueue;
 import io.netty.channel.ChannelException;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.IovArray;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
@@ -276,6 +275,8 @@ final class BsdSocket extends Socket {
     public void bindTun(final SocketAddress socketAddress) throws IOException {
         if (socketAddress instanceof TunAddress) {
             TunAddress addr = (TunAddress) socketAddress;
+
+            // TUN devices on BSD systems must be named "tunN" were only N is passed to the OS
             final int index;
             if (addr.ifName() != null) {
                 if (addr.ifName().startsWith(TUN_DEVICE_PREFIX)) {
