@@ -46,7 +46,7 @@ import java.nio.ByteBuffer;
 import static io.netty.channel.kqueue.BsdSocket.newSocketDgram;
 
 @UnstableApi
-public final class KQueueDatagramChannel extends AbstractKQueueMessageChannel implements DatagramChannel {
+public final class KQueueDatagramChannel extends AbstractKQueueDatagramChannel implements DatagramChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(DatagramPacket.class) + ", " +
                     StringUtil.simpleClassName(AddressedEnvelope.class) + '<' +
