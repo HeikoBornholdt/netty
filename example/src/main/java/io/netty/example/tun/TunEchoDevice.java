@@ -12,6 +12,8 @@ import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
 
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -58,9 +60,19 @@ public class TunEchoDevice {
             System.out.println("TUN device created: " + name);
 
             if (PlatformDependent.isOsx()) {
-                exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress()); // sudo ifconfig utun3 inet6 add fc00::1/128
-                exec("/sbin/ifconfig", name, "up");
-                exec("/sbin/route", "add", "-net", ADDRESS.getHostAddress() + '/' + 32, "-iface", name); // sudo /sbin/route add -net fc00::1 -iface utun3 // Überhaupt notwendig bei nur einer IP?
+                if (ADDRESS instanceof Inet4Address) {
+                    exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress());
+                }
+                else if (ADDRESS instanceof Inet6Address) {
+                    exec("/sbin/ifconfig", name, "inet6", "add", ADDRESS.getHostAddress() + "/128");
+                    exec("/sbin/route", "add", "-inet6", ADDRESS.getHostAddress(), "-iface", name);
+                }
+                else {
+                    throw new RuntimeException("Unhandled address type: " + ADDRESS);
+                }
+            }
+            else {
+                throw new RuntimeException("Unsupported platform: Must be run on macOS or Linux");
             }
 
             System.out.println("Address assigned: " + ADDRESS.getHostAddress());
