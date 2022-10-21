@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 The Netty Project
+ *
+ * The Netty Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package io.netty.channel.kqueue;
 
 import io.netty.buffer.ByteBuf;
@@ -40,8 +55,7 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
         if (msg instanceof TunPacket) {
             TunPacket packet = (TunPacket) msg;
             data = packet.content();
-        }
-        else {
+        } else {
             data = (ByteBuf) msg;
         }
 
@@ -54,16 +68,14 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
         if (data.hasMemoryAddress()) {
             long memoryAddress = data.memoryAddress();
             writtenBytes = socket.writeAddress(memoryAddress, data.readerIndex(), data.writerIndex());
-        }
-        else if (data.nioBufferCount() > 1) {
+        } else if (data.nioBufferCount() > 1) {
             IovArray array = ((KQueueEventLoop) eventLoop()).cleanArray();
             array.add(data, data.readerIndex(), data.readableBytes());
             int cnt = array.count();
             assert cnt != 0;
 
             writtenBytes = socket.writevAddresses(array.memoryAddress(0), cnt);
-        }
-        else {
+        } else {
             ByteBuffer nioData = data.internalNioBuffer(data.readerIndex(), data.readableBytes());
             writtenBytes = socket.write(nioData, nioData.position(), nioData.limit());
         }
@@ -76,13 +88,15 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
         if (msg instanceof Tun4Packet) {
             Tun4Packet packet = (Tun4Packet) msg;
             ByteBuf content = packet.content();
-            return UnixChannelUtil.isBufferCopyNeededForWrite(content) ? new Tun4Packet(newDirectBuffer(packet, content)) : msg;
+            return UnixChannelUtil.isBufferCopyNeededForWrite(content) ?
+                    new Tun4Packet(newDirectBuffer(packet, content)) : msg;
         }
 
         if (msg instanceof Tun6Packet) {
             Tun6Packet packet = (Tun6Packet) msg;
             ByteBuf content = packet.content();
-            return UnixChannelUtil.isBufferCopyNeededForWrite(content) ? new Tun6Packet(newDirectBuffer(packet, content)) : msg;
+            return UnixChannelUtil.isBufferCopyNeededForWrite(content) ?
+                    new Tun6Packet(newDirectBuffer(packet, content)) : msg;
         }
 
         if (msg instanceof ByteBuf) {
@@ -131,8 +145,7 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
                         final TunPacket packet;
                         try {
                             allocHandle.lastBytesRead(doReadBytes(byteBuf));
-                        }
-                        catch (Errors.NativeIoException e) {
+                        } catch (Errors.NativeIoException e) {
                             // We need to correctly translate connect errors to match NIO behaviour.
                             if (e.expectedErr() == Errors.ERROR_ECONNREFUSED_NEGATIVE) {
                                 PortUnreachableException error = new PortUnreachableException(e.getMessage());
@@ -154,11 +167,9 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
                         final int version = (byteBuf.getByte(4) & 0xff) >> 4;
                         if (version == 4) {
                             packet = new Tun4Packet(byteBuf);
-                        }
-                        else if (version == 6) {
+                        } else if (version == 6) {
                             packet = new Tun6Packet(byteBuf);
-                        }
-                        else {
+                        } else {
                             // FIXME: throw channel exception?
                             throw new IOException("Unknown protocol: " + version);
                         }
@@ -173,8 +184,7 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
                         // We use the TRUE_SUPPLIER as it is also ok to read less then what we did try to read (as long
                         // as we read anything).
                     } while (allocHandle.continueReading(UncheckedBooleanSupplier.TRUE_SUPPLIER));
-                }
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     if (byteBuf != null) {
                         byteBuf.release();
                     }
@@ -187,8 +197,7 @@ public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
                 if (exception != null) {
                     pipeline.fireExceptionCaught(exception);
                 }
-            }
-            finally {
+            } finally {
                 readReadyFinally(config);
             }
         }
