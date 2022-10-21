@@ -41,7 +41,8 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  */
 final class BsdSocket extends Socket {
     private static final String TUN_DEVICE_PREFIX = "utun";
-    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION = new IllegalArgumentException("Device name must be 'utun<index>' or null.");
+    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION =
+            new IllegalArgumentException("Device name must be 'utun<index>' or null.");
 
     // These limits are just based on observations. I couldn't find anything in header files which formally
     // define these limits.
@@ -282,16 +283,13 @@ final class BsdSocket extends Socket {
                 if (addr.ifName().startsWith(TUN_DEVICE_PREFIX)) {
                     try {
                         index = Integer.parseInt(addr.ifName().substring(TUN_DEVICE_PREFIX.length()));
-                    }
-                    catch (final NumberFormatException e) {
+                    } catch (final NumberFormatException e) {
                         throw TUN_ILLEGAL_NAME_EXCEPTION;
                     }
-                }
-                else {
+                } else {
                     throw TUN_ILLEGAL_NAME_EXCEPTION;
                 }
-            }
-            else {
+            } else {
                 index = 0;
             }
             int res = bindTun(intValue(), index);
@@ -303,11 +301,11 @@ final class BsdSocket extends Socket {
         }
     }
 
-    public static native int bindTun(final int fd, final int index);
+    public static native int bindTun(int fd, int index);
 
     public SocketAddress localAddressTun() {
         return new TunAddress(localAddressTun(intValue()));
     }
 
-    public static native String localAddressTun(final int fd);
+    public static native String localAddressTun(int fd);
 }
