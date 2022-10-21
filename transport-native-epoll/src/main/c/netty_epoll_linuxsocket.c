@@ -21,6 +21,7 @@
  */
 #define _GNU_SOURCE
 
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -28,6 +29,12 @@
 #include <netinet/udp.h> // SOL_UDP
 #include <sys/sendfile.h>
 #include <linux/tcp.h> // TCP_NOTSENT_LOWAT is a linux specific define
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <linux/if_tun.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 #include "netty_epoll_linuxsocket.h"
 #include "netty_unix_errors.h"
 #include "netty_unix_filedescriptor.h"
@@ -627,6 +634,30 @@ static void netty_epoll_linuxsocket_setUdpGro(JNIEnv* env, jclass clazz, jint fd
     netty_unix_socket_setOption(env, fd, SOL_UDP, UDP_GRO, &optval, sizeof(optval));
 }
 
+static jint netty_epoll_linuxsocket_openTunFd(JNIEnv* env) {
+    return open("/dev/net/tun", O_RDWR | O_NONBLOCK);
+}
+
+static jint netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jstring path) {
+    const char* f_path = (*env)->GetStringUTFChars(env, path, 0);
+    (*env)->ReleaseStringUTFChars(env, path, f_path);
+
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    if (strncpy(ifr.ifr_name, f_path, IFNAMSIZ) == -1) {
+        // FIXME: check for length? (see kqueue method)
+        netty_unix_errors_throwIOException(env, "strncpy() failed");
+        return -1;
+    }
+    if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
+        netty_unix_errors_throwIOException(env, "ioctl() failed");
+        return -1;
+    }
+
+    return 0;
+}
+
 
 static jlong netty_epoll_linuxsocket_sendFile(JNIEnv* env, jclass clazz, jint fd, jobject fileRegion, jlong base_off, jlong off, jlong len) {
     jobject fileChannel = (*env)->GetObjectField(env, fileRegion, fileChannelFieldId);
@@ -703,7 +734,9 @@ static const JNINativeMethod fixed_method_table[] = {
   { "leaveGroup", "(IZ[B[BII)V", (void *) netty_epoll_linuxsocket_leaveGroup },
   { "leaveSsmGroup", "(IZ[B[BII[B)V", (void *) netty_epoll_linuxsocket_leaveSsmGroup },
   { "isUdpGro", "(I)I", (void *) netty_epoll_linuxsocket_isUdpGro },
-  { "setUdpGro", "(II)V", (void *) netty_epoll_linuxsocket_setUdpGro }
+  { "setUdpGro", "(II)V", (void *) netty_epoll_linuxsocket_setUdpGro },
+  { "newSocketTunFd", "()I", (void *) netty_epoll_linuxsocket_openTunFd },
+  { "bindTun", "(II)I", (void *) netty_epoll_linuxsocket_bindTun },
 
   // "sendFile" has a dynamic signature
 };
@@ -723,7 +756,7 @@ static JNINativeMethod* createDynamicMethodsTable(const char* packagePrefix) {
     }
     memset(dynamicMethods, 0, size);
     memcpy(dynamicMethods, fixed_method_table, sizeof(fixed_method_table));
-  
+
     JNINativeMethod* dynamicMethod = &dynamicMethods[fixed_method_table_size];
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials;", dynamicTypeName, error);
     NETTY_JNI_UTIL_PREPEND("(I)L", dynamicTypeName,  dynamicMethod->signature, error);

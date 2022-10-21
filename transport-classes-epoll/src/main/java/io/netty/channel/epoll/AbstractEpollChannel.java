@@ -67,7 +67,7 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
     private Future<?> connectTimeoutFuture;
     private SocketAddress requestedRemoteAddress;
 
-    private volatile SocketAddress local;
+    protected volatile SocketAddress local;
     private volatile SocketAddress remote;
 
     protected int flags = Native.EPOLLET;
