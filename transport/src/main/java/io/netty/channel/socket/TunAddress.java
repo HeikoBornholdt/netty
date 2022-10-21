@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package io.netty.channel.kqueue;
+package io.netty.channel.socket;
 
 import java.net.SocketAddress;
 import java.util.Objects;
