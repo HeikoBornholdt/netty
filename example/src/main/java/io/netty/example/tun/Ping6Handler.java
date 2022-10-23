@@ -69,12 +69,10 @@ public class Ping6Handler extends SimpleChannelInboundHandler<Tun6Packet> {
                         }
                     }
                 });
-            }
-            else {
+            } else {
                 System.out.println("Ignore non echo ping request from " + packet.sourceAddress().getHostAddress());
             }
-        }
-        else {
+        } else {
             System.out.println("Ignore non IPv6-ICMP packet from " + packet.sourceAddress().getHostAddress());
         }
     }

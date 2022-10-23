@@ -67,12 +67,10 @@ public class Ping4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
                         }
                     }
                 });
-            }
-            else {
+            } else {
                 System.out.println("Ignore non echo ping request from " + packet.sourceAddress().getHostAddress());
             }
-        }
-        else {
+        } else {
             System.out.println("Ignore non ICMP packet from " + packet.sourceAddress().getHostAddress());
         }
     }
