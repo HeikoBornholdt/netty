@@ -72,33 +72,37 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
             version = data.getUnsignedByte(0) >> 4 == 4 ? AF_INET : AF_INET6;
         }
 
-        // add address family header
-        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten) verwenden können. Gibt es da ne bessere alternative?
-        data = alloc().compositeDirectBuffer(2).
-                addComponents(true, alloc().directBuffer(4).writeInt(version), data);
-
         final int dataLen = data.readableBytes();
         if (dataLen == 0) {
             return true;
         }
 
-        final long writtenBytes;
-        if (data.hasMemoryAddress()) {
-            long memoryAddress = data.memoryAddress();
-            writtenBytes = socket.writeAddress(memoryAddress, data.readerIndex(), data.writerIndex());
-        } else if (data.nioBufferCount() > 1) {
-            IovArray array = ((KQueueEventLoop) eventLoop()).cleanArray();
-            array.add(data, data.readerIndex(), data.readableBytes());
-            int cnt = array.count();
-            assert cnt != 0;
+        // add address family header
+        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten) verwenden können. Gibt es da ne bessere alternative?
+        data = alloc().compositeDirectBuffer(2).
+                addComponents(true, alloc().directBuffer(4).writeInt(version), data);
 
-            writtenBytes = socket.writevAddresses(array.memoryAddress(0), cnt);
-        } else {
-            ByteBuffer nioData = data.internalNioBuffer(data.readerIndex(), data.readableBytes());
-            writtenBytes = socket.write(nioData, nioData.position(), nioData.limit());
+        try {
+            final long writtenBytes;
+            if (data.hasMemoryAddress()) {
+                long memoryAddress = data.memoryAddress();
+                writtenBytes = socket.writeAddress(memoryAddress, data.readerIndex(), data.writerIndex());
+            } else if (data.nioBufferCount() > 1) {
+                IovArray array = ((KQueueEventLoop) eventLoop()).cleanArray();
+                array.add(data, data.readerIndex(), data.readableBytes());
+                int cnt = array.count();
+                assert cnt != 0;
+
+                writtenBytes = socket.writevAddresses(array.memoryAddress(0), cnt);
+            } else {
+                ByteBuffer nioData = data.internalNioBuffer(data.readerIndex(), data.readableBytes());
+                writtenBytes = socket.write(nioData, nioData.position(), nioData.limit());
+            }
+
+            return writtenBytes > 0;
+        } finally {
+            data.release(); // FIXME: wegen den composite buff...
         }
-
-        return writtenBytes > 0;
     }
 
     @Override
