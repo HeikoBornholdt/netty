@@ -15,8 +15,12 @@
  */
 package io.netty.channel.kqueue;
 
+import io.netty.channel.ChannelConfig;
 import io.netty.channel.FixedRecvByteBufAllocator;
 
+/**
+ * A {@link ChannelConfig} for a {@link KQueueTunChannel}.
+ */
 public class KQueueTunChannelConfig extends KQueueChannelConfig {
     KQueueTunChannelConfig(final AbstractKQueueChannel channel) {
         super(channel, new FixedRecvByteBufAllocator(2048));
