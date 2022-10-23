@@ -200,7 +200,7 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
                 try {
                     do {
                         byteBuf = allocHandle.allocate(allocator);
-                        allocHandle.attemptedBytesRead(byteBuf.writableBytes()); // FIXME: auf MTU stellen?
+                        allocHandle.attemptedBytesRead(byteBuf.writableBytes());
 
                         final TunPacket packet;
                         try {
