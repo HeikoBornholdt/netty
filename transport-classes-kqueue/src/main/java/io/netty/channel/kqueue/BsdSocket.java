@@ -19,6 +19,7 @@ import io.netty.channel.ChannelException;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.TunAddress;
+import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.IovArray;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
@@ -309,4 +310,23 @@ final class BsdSocket extends Socket {
     }
 
     public static native String localAddressTun(int fd);
+
+    public void setMtu(final String name, final int mtu) throws IOException {
+        int res = setMtu(intValue(), name, mtu);
+        if (res < 0) {
+            throw newIOException("setMtu", res);
+        }
+    }
+
+    private static native int setMtu(int fd, String name, int mtu);
+
+    public int getMtu(final String name) throws Errors.NativeIoException {
+        int res = getMtu(intValue(), name);
+        if (res < 0) {
+            throw newIOException("getMtu", res);
+        }
+        return res;
+    }
+
+    private static native int getMtu(int fd, String name);
 }

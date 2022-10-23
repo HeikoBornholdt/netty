@@ -15,16 +15,18 @@
  */
 package io.netty.channel.socket;
 
-import io.netty.channel.Channel;
-
-import java.io.IOException;
+import io.netty.channel.ChannelOption;
 
 /**
- * A TUN device-backed {@link Channel}.
+ * Provides {@link ChannelOption}s for {@link TunChannel}s.
  */
-public interface TunChannel extends Channel {
-    @Override
-    TunAddress localAddress();
+public final class TunChannelOption<T> extends ChannelOption<T> {
+    /**
+     * Defines MTU for the created tun device (not supported on windows).
+     */
+    public static final ChannelOption<Integer> TUN_MTU = valueOf("TUN_MTU");
 
-    int mtu() throws IOException;
+    private TunChannelOption() {
+        super(null);
+    }
 }

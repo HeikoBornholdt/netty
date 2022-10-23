@@ -20,10 +20,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollTunChannel;
-//import io.netty.channel.kqueue.KQueueEventLoopGroup;
-//import io.netty.channel.kqueue.KQueueTunChannel;
+//import io.netty.channel.epoll.EpollEventLoopGroup;
+//import io.netty.channel.epoll.EpollTunChannel;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueTunChannel;
 import io.netty.channel.socket.TunAddress;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -33,6 +33,8 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+
+import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
  * Creates a TUN device that will reply to ICMP echo requests.
@@ -63,15 +65,21 @@ public class TunPingDevice {
     }
 
     public static void main(String[] args) throws Exception {
+        for (int i = 0; i < 10; i++) {
+            System.out.println("Wait " + (10 - i) + "s...");
+            Thread.sleep(1000);
+        }
+        System.out.println("geht los");
+
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
 //        if (PlatformDependent.isOsx()) {
-//            group = new KQueueEventLoopGroup(1);
-//            channelClass = KQueueTunChannel.class;
+            group = new KQueueEventLoopGroup(1);
+            channelClass = KQueueTunChannel.class;
 //        }
 //        else if (!PlatformDependent.isWindows()) {
-            group = new EpollEventLoopGroup(1);
-            channelClass = EpollTunChannel.class;
+//            group = new EpollEventLoopGroup(1);
+//            channelClass = EpollTunChannel.class;
 //        }
 //        else {
 //            throw new RuntimeException("Unsupported platform: This example only work on Linux or macOS");
@@ -81,6 +89,7 @@ public class TunPingDevice {
             final Bootstrap b = new Bootstrap()
                     .group(group)
                     .channel(channelClass)
+                    .option(TUN_MTU, 1200)
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(final Channel ch) {
