@@ -22,6 +22,7 @@ import io.netty.channel.unix.NativeInetAddress;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.util.CharsetUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.SocketUtils;
 import io.netty.util.internal.UnstableApi;
@@ -36,15 +37,17 @@ import java.util.Enumeration;
 
 import static io.netty.channel.unix.Errors.ioResult;
 import static io.netty.channel.unix.Errors.newIOException;
+import static io.netty.util.CharsetUtil.US_ASCII;
 
 /**
  * A socket which provides access Linux native methods.
  */
 @UnstableApi
 public final class LinuxSocket extends Socket {
-    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION =
-            new IllegalArgumentException("Device name must be an ASCII string shorter than 16 characters or null.");
     static final InetAddress INET6_ANY = unsafeInetAddrByName("::");
+    static final int IFNAMSIZ = 16; // FIXME: read from C?
+    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION =
+            new IllegalArgumentException("Device name must be an ASCII string shorter than " + IFNAMSIZ + " characters or null.");
     private static final InetAddress INET_ANY = unsafeInetAddrByName("0.0.0.0");
     private static final long MAX_UINT32_T = 0xFFFFFFFFL;
 
@@ -241,11 +244,11 @@ public final class LinuxSocket extends Socket {
         setTcpMd5Sig(intValue(), ipv6, a.address(), a.scopeId(), key);
     }
 
-    boolean isTcpCork() throws IOException  {
+    boolean isTcpCork() throws IOException {
         return isTcpCork(intValue()) != 0;
     }
 
-    int getSoBusyPoll() throws IOException  {
+    int getSoBusyPoll() throws IOException {
         return getSoBusyPoll(intValue());
     }
 
@@ -412,7 +415,7 @@ public final class LinuxSocket extends Socket {
     private static native void setTcpKeepIdle(int fd, int seconds) throws IOException;
     private static native void setTcpKeepIntvl(int fd, int seconds) throws IOException;
     private static native void setTcpKeepCnt(int fd, int probes) throws IOException;
-    private static native void setTcpUserTimeout(int fd, int milliseconds)throws IOException;
+    private static native void setTcpUserTimeout(int fd, int milliseconds) throws IOException;
     private static native void setIpFreeBind(int fd, int freeBind) throws IOException;
     private static native void setIpTransparent(int fd, int transparent) throws IOException;
     private static native void setIpRecvOrigDestAddr(int fd, int transparent) throws IOException;
@@ -456,15 +459,13 @@ public final class LinuxSocket extends Socket {
         if (socketAddress instanceof TunAddress) {
             TunAddress addr = (TunAddress) socketAddress;
 
-            // use IFNAMSIZ instead of 16?
-            // FIXME: uncomment US_ASCII
-            if (addr.ifName() != null && (addr.ifName().length() >= 16/* || !US_ASCII.newEncoder().canEncode(addr.ifName())*/)) {
+            if (addr.ifName() != null && (addr.ifName().length() >= IFNAMSIZ || !US_ASCII.newEncoder().canEncode(addr.ifName()))) {
                 throw TUN_ILLEGAL_NAME_EXCEPTION;
             }
 
             String name = bindTun(intValue(), addr.ifName());
             if (name == null) {
-                throw newIOException("bind", -1); // FIXME: error code ist komisch
+                throw new IOException("bind(..) failed");
             }
 
             return new TunAddress(name);
