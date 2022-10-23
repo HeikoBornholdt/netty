@@ -144,10 +144,8 @@ static jint netty_kqueue_bsdsocket_connectx(JNIEnv* env, jclass clazz,
 #endif
 }
 
-// TODO: wäre eigentlich schöner, wenn wir den code aus nettyNonBlockingSocket (netty_unix_socket.c) verwenden könnten...
 static jint netty_kqueue_bsdsocket_newSocketTunFd(JNIEnv* env, jclass clazz) {
 #ifdef SOCK_NONBLOCK
-    // TODO: funktioniert das hier eigentlich? Wann ist SOCK_NONBLOCK vorhanden????
     return socket(AF_SYSTEM, SOCK_DGRAM | SOCK_NONBLOCK, SYSPROTO_CONTROL);
 #else
     int socketFd = socket(AF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
@@ -163,7 +161,7 @@ static jint netty_kqueue_bsdsocket_newSocketTunFd(JNIEnv* env, jclass clazz) {
 }
 
 static jint netty_kqueue_bsdsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jint index) {
-    // mark socket as utun device
+    // mark as tun device
     struct ctl_info ctlInfo;
     memset(&ctlInfo, 0, sizeof(ctlInfo));
     if (strlcpy(ctlInfo.ctl_name, UTUN_CONTROL_NAME, sizeof(ctlInfo.ctl_name)) >= sizeof(ctlInfo.ctl_name)) {
@@ -409,13 +407,13 @@ jint netty_kqueue_bsdsocket_JNI_OnLoad(JNIEnv* env, const char* packagePrefix) {
 
     NETTY_JNI_UTIL_FIND_CLASS(env, fileDescriptorCls, "java/io/FileDescriptor", done);
     NETTY_JNI_UTIL_GET_FIELD(env, fileDescriptorCls, fdFieldId, "fd", "I", done);
-  
+
     NETTY_JNI_UTIL_LOAD_CLASS(env, stringClass, "java/lang/String", done);
 
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials", nettyClassName, done);
     NETTY_JNI_UTIL_LOAD_CLASS(env, peerCredentialsClass, nettyClassName, done);
     netty_jni_util_free_dynamic_name(&nettyClassName);
-  
+
     NETTY_JNI_UTIL_GET_METHOD(env, peerCredentialsClass, peerCredentialsMethodId, "<init>", "(II[I)V", done);
     ret = NETTY_JNI_UTIL_JNI_VERSION;
 done:

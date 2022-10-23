@@ -638,13 +638,14 @@ static jint netty_epoll_linuxsocket_openTunFd(JNIEnv* env) {
 }
 
 static jstring netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jstring name) {
+    // mark as tun device
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
     if (name != NULL) {
         const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
         (*env)->ReleaseStringUTFChars(env, name, f_name);
-        strncpy(ifr.ifr_name, f_name, IFNAMSIZ); // FIXME: check for too long f_name?
+        strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
     }
 
     if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
@@ -753,7 +754,7 @@ static JNINativeMethod* createDynamicMethodsTable(const char* packagePrefix) {
     }
     memset(dynamicMethods, 0, size);
     memcpy(dynamicMethods, fixed_method_table, sizeof(fixed_method_table));
-  
+
     JNINativeMethod* dynamicMethod = &dynamicMethods[fixed_method_table_size];
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials;", dynamicTypeName, error);
     NETTY_JNI_UTIL_PREPEND("(I)L", dynamicTypeName,  dynamicMethod->signature, error);
