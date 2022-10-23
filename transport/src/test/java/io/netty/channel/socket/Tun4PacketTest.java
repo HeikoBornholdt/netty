@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 The Netty Project
+ *
+ * The Netty Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package io.netty.channel.socket;
 
 import io.netty.buffer.ByteBuf;
@@ -230,7 +245,7 @@ class Tun4PacketTest {
                 69, 0, 0, 115, 0, 0, 64, 0, 64, 17, -72, 97, -64, -88, 0, 1, -64, -88, 0, -57
         });
 
-        final Tun4Packet tun4Packet = new Tun4Packet(buf);
+        Tun4Packet tun4Packet = new Tun4Packet(buf);
         assertTrue(tun4Packet.verifyChecksum());
     }
 
@@ -242,44 +257,5 @@ class Tun4PacketTest {
         });
 
         assertEquals(47201, Tun4Packet.calculateChecksum(buf));
-    }
-
-    @Test
-    void populatePacket() throws UnknownHostException {
-        final int typeOfService = 0;
-        final int identification = 61565;
-        final int flags = 2;
-        final int fragmentOffset = 0;
-        final int timeToLive = 64;
-        final int protocol = 17; // UDP
-        final boolean calculateChecksum = true;
-        final Inet4Address sourceAddress = (Inet4Address) InetAddress.getByName("123.234.123.234");
-        final Inet4Address destinationAddress = (Inet4Address) InetAddress.getByName("234.123.234.123");
-        // udp
-        final byte[] data = {
-                1, 2, 3, 4,
-                0, 8, 0, 0
-        };
-
-        final ByteBuf buffer = Unpooled.buffer();
-        try {
-            Tun4Packet.populatePacket(buffer, typeOfService, identification, flags, fragmentOffset, timeToLive, protocol, calculateChecksum, sourceAddress, destinationAddress, data);
-            Tun4Packet packet = new Tun4Packet(buffer);
-
-            assertEquals(typeOfService, packet.typeOfService());
-            assertEquals(identification, packet.identification());
-            assertEquals(flags, packet.flags());
-            assertEquals(fragmentOffset, packet.fragmentOffset());
-            assertEquals(timeToLive, packet.timeToLive());
-            assertEquals(timeToLive, packet.timeToLive());
-            assertEquals(protocol, packet.protocol());
-            assertEquals(sourceAddress, packet.sourceAddress());
-            assertEquals(destinationAddress, packet.destinationAddress());
-            assertArrayEquals(data, packet.data());
-            assertTrue(packet.verifyChecksum());
-        }
-        finally {
-            buffer.release();
-        }
     }
 }
