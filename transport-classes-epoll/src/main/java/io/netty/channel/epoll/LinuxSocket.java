@@ -452,7 +452,7 @@ public final class LinuxSocket extends Socket {
 
     private static native int newSocketTunFd();
 
-    public void bindTun(final SocketAddress socketAddress) throws IOException {
+    public TunAddress bindTun(final SocketAddress socketAddress) throws IOException {
         if (socketAddress instanceof TunAddress) {
             TunAddress addr = (TunAddress) socketAddress;
 
@@ -462,15 +462,17 @@ public final class LinuxSocket extends Socket {
                 throw TUN_ILLEGAL_NAME_EXCEPTION;
             }
 
-            int res = bindTun(intValue(), addr.ifName());
-            if (res < 0) {
-                throw newIOException("bind", res);
+            String name = bindTun(intValue(), addr.ifName());
+            if (name == null) {
+                throw newIOException("bind", -1); // FIXME: error code ist komisch
             }
+
+            return new TunAddress(name);
         }
         else {
             throw new Error("Unexpected SocketAddress implementation " + socketAddress);
         }
     }
 
-    public static native int bindTun(int fd, String name);
+    public static native String bindTun(int fd, String name);
 }

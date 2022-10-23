@@ -7,8 +7,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollTunChannel;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueTunChannel;
+//import io.netty.channel.kqueue.KQueueEventLoopGroup;
+//import io.netty.channel.kqueue.KQueueTunChannel;
 import io.netty.channel.socket.TunAddress;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -43,13 +43,17 @@ public class TunEchoDevice {
     }
 
     public static void main(String[] args) throws Exception {
+//        System.out.println("10s ab jetzt!");
+//        Thread.sleep(10 * 1000);
+//        System.out.println("geht los");
+
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
-        if (PlatformDependent.isOsx()) {
+        /*if (PlatformDependent.isOsx()) {
             group = new KQueueEventLoopGroup(1);
             channelClass = KQueueTunChannel.class;
         }
-        else if (!PlatformDependent.isWindows()) {
+        else*/ if (!PlatformDependent.isWindows()) {
             group = new EpollEventLoopGroup(1);
             channelClass = EpollTunChannel.class;
         }
@@ -75,19 +79,19 @@ public class TunEchoDevice {
             System.out.println("TUN device created: " + name);
 
             if (PlatformDependent.isOsx()) {
-                if (ADDRESS instanceof Inet4Address) {
-                    exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress());
-                }
-                else if (ADDRESS instanceof Inet6Address) {
+                if (ADDRESS instanceof Inet6Address) {
                     exec("/sbin/ifconfig", name, "inet6", "add", ADDRESS.getHostAddress() + "/128");
                     exec("/sbin/route", "add", "-inet6", ADDRESS.getHostAddress(), "-iface", name);
                 }
                 else {
+                    exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress());
                     throw new RuntimeException("Unhandled address type: " + ADDRESS);
                 }
             }
             else if (!PlatformDependent.isWindows()) {
-                throw new RuntimeException("Implement me");
+                // FIXME: IPv6?
+                exec("/sbin/ip", ADDRESS instanceof Inet6Address ? "-6" : "-4", "addr", "add", ADDRESS.getHostAddress() + '/' + 24, "dev", name);
+                exec("/sbin/ip", "link", "set", "dev", name, "up");
             }
 
             System.out.println("Address assigned: " + ADDRESS.getHostAddress());

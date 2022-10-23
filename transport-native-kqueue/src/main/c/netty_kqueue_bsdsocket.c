@@ -333,7 +333,7 @@ static const JNINativeMethod fixed_method_table[] = {
   { "connectx", "(IIZ[BIIZ[BIIIJII)I", (void *) netty_kqueue_bsdsocket_connectx },
   { "newSocketTunFd", "()I", (void *) netty_kqueue_bsdsocket_newSocketTunFd },
   { "bindTun", "(II)I", (void *) netty_kqueue_bsdsocket_bindTun },
-  { "localAddressTun", "(I)Ljava/lang/String;", (void *) netty_kqueue_bsdsocket_localAddressTun },
+  { "localAddressTun", "(I)Ljava/lang/String;", (void *) netty_kqueue_bsdsocket_localAddressTun }
 };
 
 static const jint fixed_method_table_size = sizeof(fixed_method_table) / sizeof(fixed_method_table[0]);

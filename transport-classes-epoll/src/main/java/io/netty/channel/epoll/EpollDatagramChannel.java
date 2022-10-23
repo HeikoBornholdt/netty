@@ -342,6 +342,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
                 if (Native.IS_SUPPORTING_SENDMMSG && in.size() > 1 ||
                         // We only handle UDP_SEGMENT in sendmmsg.
                         in.current() instanceof io.netty.channel.unix.SegmentedDatagramPacket) {
+                    System.out.println("EpollDatagramChannel.doWrite SegmentedDatagramPacket");
                     NativeDatagramPacketArray array = cleanDatagramPacketArray();
                     array.add(in, isConnected(), maxMessagesPerWrite);
                     int cnt = array.count();

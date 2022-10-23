@@ -10,6 +10,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 public class TunEchoDeviceHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
+        System.out.println("Received " + msg);
         ctx.write(msg);
     }
 
