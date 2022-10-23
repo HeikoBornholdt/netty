@@ -43,7 +43,7 @@ import java.util.Arrays;
  *     ./run-example tun-ping-device -Daddress=fc00::1 -Dnetmask=120
  * </pre>
  *
- * In a second shell:
+ * In another shell:
  * <pre>
  *     ping6 fc00:0:0:0:0:0:0:2
  * </pre>
