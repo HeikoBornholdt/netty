@@ -21,7 +21,6 @@
  */
 #define _GNU_SOURCE
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -736,7 +735,6 @@ static const JNINativeMethod fixed_method_table[] = {
   { "newSocketTunFd", "()I", (void *) netty_epoll_linuxsocket_openTunFd },
   { "bindTun", "(ILjava/lang/String;)Ljava/lang/String;", (void *) netty_epoll_linuxsocket_bindTun }
 
-
   // "sendFile" has a dynamic signature
 };
 
@@ -755,7 +753,7 @@ static JNINativeMethod* createDynamicMethodsTable(const char* packagePrefix) {
     }
     memset(dynamicMethods, 0, size);
     memcpy(dynamicMethods, fixed_method_table, sizeof(fixed_method_table));
-
+  
     JNINativeMethod* dynamicMethod = &dynamicMethods[fixed_method_table_size];
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials;", dynamicTypeName, error);
     NETTY_JNI_UTIL_PREPEND("(I)L", dynamicTypeName,  dynamicMethod->signature, error);

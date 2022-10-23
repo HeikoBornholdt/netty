@@ -15,22 +15,22 @@
  */
 #include <assert.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/malloc.h>
-#include <sys/ioctl.h>
-#include <sys/kern_control.h>
 #include <sys/socket.h>
-#include <sys/sys_domain.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <sys/ucred.h>
-#include <net/if.h>
-#include <net/if_utun.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/kern_control.h>
+#include <sys/sys_domain.h>
+#include <net/if.h>
+#include <net/if_utun.h>
 
 #include "netty_kqueue_bsdsocket.h"
 #include "netty_unix_errors.h"
@@ -409,13 +409,13 @@ jint netty_kqueue_bsdsocket_JNI_OnLoad(JNIEnv* env, const char* packagePrefix) {
 
     NETTY_JNI_UTIL_FIND_CLASS(env, fileDescriptorCls, "java/io/FileDescriptor", done);
     NETTY_JNI_UTIL_GET_FIELD(env, fileDescriptorCls, fdFieldId, "fd", "I", done);
-
+  
     NETTY_JNI_UTIL_LOAD_CLASS(env, stringClass, "java/lang/String", done);
 
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials", nettyClassName, done);
     NETTY_JNI_UTIL_LOAD_CLASS(env, peerCredentialsClass, nettyClassName, done);
     netty_jni_util_free_dynamic_name(&nettyClassName);
-
+  
     NETTY_JNI_UTIL_GET_METHOD(env, peerCredentialsClass, peerCredentialsMethodId, "<init>", "(II[I)V", done);
     ret = NETTY_JNI_UTIL_JNI_VERSION;
 done:
