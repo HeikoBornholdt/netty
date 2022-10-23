@@ -645,8 +645,8 @@ static jstring netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint f
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
     if (name != NULL) {
         const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-        (*env)->ReleaseStringUTFChars(env, name, f_name); // FIXME: wir releasen zu früh. vielleicht eine zeile runter?
         strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
+        (*env)->ReleaseStringUTFChars(env, name, f_name);
     }
 
     if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
