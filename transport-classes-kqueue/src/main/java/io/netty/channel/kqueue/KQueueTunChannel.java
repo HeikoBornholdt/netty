@@ -17,6 +17,7 @@ package io.netty.channel.kqueue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
@@ -40,6 +41,8 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
+    public static final int AF_INET = 2; // FIXME: read from C?
+    public static final int AF_INET6 = 30; // FIXME: read from C?
     private final KQueueTunChannelConfig config;
 
     public KQueueTunChannel() {
@@ -54,13 +57,25 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
 
     @Override
     protected boolean doWriteMessage(final Object msg) throws Exception {
-        final ByteBuf data;
-        if (msg instanceof TunPacket) {
-            TunPacket packet = (TunPacket) msg;
+        ByteBuf data;
+        int version;
+        if (msg instanceof Tun4Packet) {
+            TunPacket packet = (Tun4Packet) msg;
             data = packet.content();
+            version = AF_INET;
+        } else if (msg instanceof Tun6Packet) {
+            TunPacket packet = (Tun6Packet) msg;
+            data = packet.content();
+            version = AF_INET6;
         } else {
             data = (ByteBuf) msg;
+            version = data.getUnsignedByte(0) >> 4 == 4 ? AF_INET : AF_INET6;
         }
+
+        // add address family header
+        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten) verwenden können. Gibt es da ne bessere alternative?
+        data = alloc().compositeDirectBuffer(2).
+                addComponents(true, alloc().directBuffer(4).writeInt(version), data);
 
         final int dataLen = data.readableBytes();
         if (dataLen == 0) {
@@ -164,15 +179,15 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
                             break;
                         }
 
-                        // FIXME: extract ip version
-                        //byteBuf.readerIndex(4); // FIXME: ja?
-                        // FIXME: remove header?
+                        final int version = byteBuf.readInt();
 
-                        final int version = (byteBuf.getByte(4) & 0xff) >> 4;
-                        if (version == 4) {
-                            packet = new Tun4Packet(byteBuf);
-                        } else if (version == 6) {
-                            packet = new Tun6Packet(byteBuf);
+                        // remove address family header
+                        byteBuf = byteBuf.slice(4, byteBuf.writerIndex());
+
+                        if (version == AF_INET) {
+                            packet = new Tun4Packet(byteBuf.slice());
+                        } else if (version == AF_INET6) {
+                            packet = new Tun6Packet(byteBuf.slice());
                         } else {
                             // FIXME: throw channel exception?
                             throw new IOException("Unknown protocol: " + version);
