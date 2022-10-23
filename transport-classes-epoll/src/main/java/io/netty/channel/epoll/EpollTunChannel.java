@@ -16,15 +16,20 @@
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
 import io.netty.channel.socket.TunChannel;
 import io.netty.channel.socket.TunPacket;
+import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.UnixChannelUtil;
+import io.netty.util.UncheckedBooleanSupplier;
 import io.netty.util.internal.StringUtil;
 
 import java.io.IOException;
+import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 
 import static io.netty.channel.epoll.LinuxSocket.newSocketTun;
@@ -51,31 +56,6 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
             }
 
             try {
-//                // Check if sendmmsg(...) is supported which is only the case for GLIBC 2.14+
-//                if (Native.IS_SUPPORTING_SENDMMSG && in.size() > 1 ||
-//                        // We only handle UDP_SEGMENT in sendmmsg.
-//                        in.current() instanceof io.netty.channel.unix.SegmentedDatagramPacket) {
-//                    NativeDatagramPacketArray array = cleanDatagramPacketArray();
-//                    array.add(in, isConnected(), maxMessagesPerWrite);
-//                    int cnt = array.count();
-//
-//                    if (cnt >= 1) {
-//                        // Try to use gathering writes via sendmmsg(...) syscall.
-//                        int offset = 0;
-//                        NativeDatagramPacketArray.NativeDatagramPacket[] packets = array.packets();
-//
-//                        int send = socket.sendmmsg(packets, offset, cnt);
-//                        if (send == 0) {
-//                            // Did not write all messages.
-//                            break;
-//                        }
-//                        for (int i = 0; i < send; i++) {
-//                            in.remove();
-//                        }
-//                        maxMessagesPerWrite -= send;
-//                        continue;
-//                    }
-//                }
                 boolean done = false;
                 for (int i = config().getWriteSpinCount(); i > 0; --i) {
                     if (doWriteMessage(msg)) {
@@ -112,7 +92,20 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
     }
 
     private boolean doWriteMessage(Object msg) throws Exception {
-        System.out.println("EpollTunChannel.doWriteMessage");
+        final ByteBuf data;
+        if (msg instanceof TunPacket) {
+            TunPacket packet = (TunPacket) msg;
+            data = packet.content();
+        } else {
+            data = (ByteBuf) msg;
+        }
+
+        final int dataLen = data.readableBytes();
+        if (dataLen == 0) {
+            return true;
+        }
+
+        return doWriteOrSendBytes(data, null, false) > 0;
     }
 
     @Override
@@ -151,16 +144,102 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
     }
 
     @Override
+    protected void doRegister() throws Exception {
+        // do nothing
+    }
+
+    @Override
     protected void doBind(SocketAddress local) throws Exception {
-        socket.bindTun(local);
-        this.local = local;
+        // doRegister muss nach bindTun erfolen, weil sonst epollCtlAdd nicht funktioniert
+        this.local = socket.bindTun(local);
+        super.doRegister();
         active = true;
     }
 
     protected class EpollTunChannelUnsafe extends AbstractEpollUnsafe {
         @Override
         void epollInReady() {
-            System.out.println("EpollTunChannelUnsafe.epollInReady");
+            assert eventLoop().inEventLoop();
+            EpollChannelConfig config = config();
+            if (shouldBreakEpollInReady(config)) {
+                clearEpollIn0();
+                return;
+            }
+            final EpollRecvByteAllocatorHandle allocHandle = recvBufAllocHandle();
+            allocHandle.edgeTriggered(isFlagSet(Native.EPOLLET));
+
+            final ChannelPipeline pipeline = pipeline();
+            final ByteBufAllocator allocator = config.getAllocator();
+            allocHandle.reset(config);
+            epollInBefore();
+
+            Throwable exception = null;
+            try {
+                ByteBuf byteBuf = null;
+                try {
+                    do {
+                        byteBuf = allocHandle.allocate(allocator);
+                        allocHandle.attemptedBytesRead(byteBuf.writableBytes()); // FIXME: auf MTU stellen?
+
+                        final TunPacket packet;
+                        try {
+                            allocHandle.lastBytesRead(doReadBytes(byteBuf));
+                        } catch (Errors.NativeIoException e) {
+                            // We need to correctly translate connect errors to match NIO behaviour.
+                            if (e.expectedErr() == Errors.ERROR_ECONNREFUSED_NEGATIVE) {
+                                PortUnreachableException error = new PortUnreachableException(e.getMessage());
+                                error.initCause(e);
+                                throw  error;
+                            }
+                            throw e;
+                        }
+                        if (allocHandle.lastBytesRead() <= 0) {
+                            // nothing was read, release the buffer.
+                            byteBuf.release();
+                            byteBuf = null;
+                            break;
+                        }
+
+                        // FIXME: extract ip version
+                        //byteBuf.readerIndex(4); // FIXME: ja?
+                        // FIXME: remove header?
+
+                        final int version = (byteBuf.getByte(0) & 0xff) >> 4;
+                        if (version == 4) {
+                            packet = new Tun4Packet(byteBuf);
+                        } else if (version == 6) {
+                            packet = new Tun6Packet(byteBuf);
+                        } else {
+                            // FIXME: throw channel exception?
+                            throw new IOException("Unknown protocol: " + version);
+                        }
+
+                        allocHandle.incMessagesRead(1);
+
+                        readPending = false;
+                        pipeline.fireChannelRead(packet);
+
+                        byteBuf = null;
+
+                        // We use the TRUE_SUPPLIER as it is also ok to read less then what we did try to read (as long
+                        // as we read anything).
+                    } while (allocHandle.continueReading(UncheckedBooleanSupplier.TRUE_SUPPLIER));
+                } catch (Throwable t) {
+                    if (byteBuf != null) {
+                        byteBuf.release();
+                    }
+                    exception = t;
+                }
+
+                allocHandle.readComplete();
+                pipeline.fireChannelReadComplete();
+
+                if (exception != null) {
+                    pipeline.fireExceptionCaught(exception);
+                }
+            } finally {
+                epollInFinally(config);
+            }
         }
     }
 }

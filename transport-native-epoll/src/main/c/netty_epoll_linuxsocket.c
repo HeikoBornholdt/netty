@@ -638,24 +638,22 @@ static jint netty_epoll_linuxsocket_openTunFd(JNIEnv* env) {
     return open("/dev/net/tun", O_RDWR | O_NONBLOCK);
 }
 
-static jint netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jstring path) {
-    const char* f_path = (*env)->GetStringUTFChars(env, path, 0);
-    (*env)->ReleaseStringUTFChars(env, path, f_path);
-
+static jstring netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jstring name) {
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-    if (strncpy(ifr.ifr_name, f_path, IFNAMSIZ) == -1) {
-        // FIXME: check for length? (see kqueue method)
-        netty_unix_errors_throwIOException(env, "strncpy() failed");
-        return -1;
-    }
-    if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
-        netty_unix_errors_throwIOException(env, "ioctl() failed");
-        return -1;
+    if (name != NULL) {
+        const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
+        (*env)->ReleaseStringUTFChars(env, name, f_name);
+        strncpy(ifr.ifr_name, f_name, IFNAMSIZ); // FIXME: check for too long f_name?
     }
 
-    return 0;
+    if (ioctl(fd, TUNSETIFF, &ifr) == -1) {
+        netty_unix_errors_throwIOException(env, "ioctl() failed");
+        return NULL;
+    }
+
+    return (*env)->NewStringUTF(env, ifr.ifr_name);
 }
 
 
@@ -736,7 +734,8 @@ static const JNINativeMethod fixed_method_table[] = {
   { "isUdpGro", "(I)I", (void *) netty_epoll_linuxsocket_isUdpGro },
   { "setUdpGro", "(II)V", (void *) netty_epoll_linuxsocket_setUdpGro },
   { "newSocketTunFd", "()I", (void *) netty_epoll_linuxsocket_openTunFd },
-  { "bindTun", "(II)I", (void *) netty_epoll_linuxsocket_bindTun },
+  { "bindTun", "(ILjava/lang/String;)Ljava/lang/String;", (void *) netty_epoll_linuxsocket_bindTun }
+
 
   // "sendFile" has a dynamic signature
 };
