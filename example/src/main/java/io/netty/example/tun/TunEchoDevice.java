@@ -16,14 +16,17 @@
 package io.netty.example.tun;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-//import io.netty.channel.epoll.EpollEventLoopGroup;
-//import io.netty.channel.epoll.EpollTunChannel;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueTunChannel;
+import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.TunAddress;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -34,23 +37,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static io.netty.channel.socket.Tun4Packet.INET4_DESTINATION_ADDRESS;
+import static io.netty.channel.socket.Tun4Packet.INET4_SOURCE_ADDRESS;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
-/**
- * Creates a TUN device that will reply to ICMP echo requests.
- *
- * <h2>Usage:</h2>
- *
- * <pre>
- *     ./run-example tun-ping-device -Daddress=fc00::1 -Dnetmask=120
- * </pre>
- *
- * In another shell:
- * <pre>
- *     ping6 fc00:0:0:0:0:0:0:2
- * </pre>
- */
-public class TunPingDevice {
+public class TunEchoDevice {
     static final String NAME = System.getProperty("name", null);
     static final InetAddress ADDRESS;
     static final int NETMASK = Integer.parseInt(System.getProperty("netmask", "24"));
@@ -94,8 +85,7 @@ public class TunPingDevice {
                         protected void initChannel(Channel ch) {
                             ChannelPipeline p = ch.pipeline();
 
-                            p.addLast(new Ping4Handler());
-                            p.addLast(new Ping6Handler());
+                            p.addLast(new Echo4Handler());
                         }
                     });
             Channel ch = b.bind(new TunAddress(NAME)).syncUninterruptibly().channel();
@@ -118,7 +108,7 @@ public class TunPingDevice {
             }
 
             System.out.println("Address and netmask assigned: " + ADDRESS.getHostAddress() + '/' + NETMASK);
-            System.out.println("All ICMP echo ping requests addressed to this subnet should now be replied.");
+            System.out.println("All UDP datagrams addressed to this subnet should now be echoed back.");
 
             ch.closeFuture().syncUninterruptibly();
         } catch (IOException e) {
@@ -137,6 +127,30 @@ public class TunPingDevice {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static class Echo4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
+        protected Echo4Handler() {
+            super(false);
+        }
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx,
+                                    Tun4Packet packet) throws Exception {
+            // switch addresses
+            InetAddress source = packet.sourceAddress();
+            InetAddress destination = packet.destinationAddress();
+            packet.content().setBytes(INET4_SOURCE_ADDRESS, destination.getAddress());
+            packet.content().setBytes(INET4_DESTINATION_ADDRESS, source.getAddress());
+
+            ctx.write(packet);
+        }
+
+        @Override
+        public void channelReadComplete(ChannelHandlerContext ctx) {
+            ctx.fireChannelReadComplete();
+            ctx.flush();
         }
     }
 }
