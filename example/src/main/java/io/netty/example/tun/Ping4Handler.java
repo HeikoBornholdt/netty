@@ -40,6 +40,10 @@ public class Ping4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
     public static final int ECHO = 8;
     public static final int ECHO_REPLY = 0;
 
+    public Ping4Handler() {
+        super(false);
+    }
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx,
                                 Tun4Packet packet) {
@@ -51,7 +55,7 @@ public class Ping4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
                 int checksum = packet.content().getUnsignedShort(CHECKSUM);
 
                 // create response
-                ByteBuf buf = packet.content().retain();
+                ByteBuf buf = packet.content();
                 buf.setBytes(INET4_SOURCE_ADDRESS, destination.getAddress());
                 buf.setBytes(INET4_DESTINATION_ADDRESS, source.getAddress());
                 buf.setByte(TYPE, ECHO_REPLY);
