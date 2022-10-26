@@ -16,94 +16,55 @@
 package io.netty.channel.socket;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class Tun6PacketTest {
     private Tun6Packet packet;
+    private ByteBuf data;
 
     @BeforeEach
     void setUp() {
-        ByteBuf data = Unpooled.wrappedBuffer(new byte[]{
-                96,
-                38,
-                12,
-                0,
-                0,
-                117,
-                6,
-                64,
-                -2,
-                -128,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                28,
-                -33,
-                23,
-                75,
-                -111,
-                -33,
-                100,
-                7,
-                -2,
-                -128,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                102,
-                68,
-                94,
-                -66,
-                -33,
-                -8,
-                67,
-                -61,
-                -126,
-                27,
-                88,
-                -28,
-                2,
-                55,
-                90,
-                -113,
-                -37,
-                113,
-                -65,
-                -128,
-                24,
-                8,
-                0,
-                -66,
-                -37,
-                0,
-                0,
-                1,
-                1,
-                8,
-                10,
-                23,
-                -117,
-                42,
-                80,
-                -34,
-                37,
-                8,
-                -13
+        data = wrappedBuffer(new byte[]{
+                // IPv6
+                (byte) 0x60, // version and traffic class
+                (byte) 0x26, (byte) 0x0c, (byte) 0x00, // traffic class and flow label
+                (byte) 0x00, (byte) 0x75, // payload length
+                (byte) 0x06, // next header
+                (byte) 0x40, // hop limit
+                // source address
+                (byte) 0xfe, (byte) 0x80, (byte) 0x00, (byte) 0x00,
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+                (byte) 0x1c, (byte) 0xdf, (byte) 0x17, (byte) 0x4b,
+                (byte) 0x91, (byte) 0xdf, (byte) 0x64, (byte) 0x07,
+                // destination address
+                (byte) 0xfe, (byte) 0x80, (byte) 0x00, (byte) 0x00,
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+                (byte) 0x00, (byte) 0x66, (byte) 0x44, (byte) 0x5e,
+                (byte) 0xbe, (byte) 0xdf, (byte) 0xf8, (byte) 0x43,
+                // TCP
+                (byte) 0xc3, (byte) 0x82, // source port
+                (byte) 0x1b, (byte) 0x58, // destination port
+                (byte) 0xe4, (byte) 0x02, (byte) 0x37, (byte) 0x5a, // sequence number
+                (byte) 0x8f, (byte) 0xdb, (byte) 0x71, (byte) 0xbf, // acknowledgement number
+                (byte) 0xc3, // data offset and reserved
+                (byte) 0x18, // control bits (congestion window reduced)
+                (byte) 0x08, (byte) 0x00, // window
+                (byte) 0xbe, (byte) 0xdb, // checksum
+                (byte) 0x00, (byte) 0x00, // urgent pointer
+                (byte) 0x01, (byte) 0x01, // 2x option
+                (byte) 0x08, // kind
+                (byte) 0x10, // length
+                (byte) 0x17, (byte) 0x8b, (byte) 0x2a, (byte) 0x50, // timestamp value
+                (byte) 0xde, (byte) 0x25, (byte) 0x08, (byte) 0xf3, // timestamp echo reply
         });
         packet = new Tun6Packet(data);
     }
@@ -137,6 +98,7 @@ class Tun6PacketTest {
     void testHopLimit() {
         assertEquals(64, packet.hopLimit());
     }
+
     @Test
     void testSourceAddress() throws UnknownHostException {
         assertEquals(InetAddress.getByName("fe80:0:0:0:1cdf:174b:91df:6407"), packet.sourceAddress());
@@ -149,40 +111,7 @@ class Tun6PacketTest {
 
     @Test
     void testData() {
-        assertArrayEquals(new byte[]{
-                -61,
-                -126,
-                27,
-                88,
-                -28,
-                2,
-                55,
-                90,
-                -113,
-                -37,
-                113,
-                -65,
-                -128,
-                24,
-                8,
-                0,
-                -66,
-                -37,
-                0,
-                0,
-                1,
-                1,
-                8,
-                10,
-                23,
-                -117,
-                42,
-                80,
-                -34,
-                37,
-                8,
-                -13
-        }, packet.data());
+        assertArrayEquals(ByteBufUtil.getBytes(data, 40, 32), packet.data());
     }
 
     @Test
