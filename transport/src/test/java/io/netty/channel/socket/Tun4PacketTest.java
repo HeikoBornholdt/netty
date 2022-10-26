@@ -15,16 +15,17 @@
  */
 package io.netty.channel.socket;
 
+import com.google.common.primitives.Ints;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static io.netty.channel.socket.Tun4Packet.INET4_FLAGS_DONT_FRAGMENT_MASK;
 import static io.netty.channel.socket.Tun4Packet.INET4_FLAGS_MORE_FRAGMENTS_MASK;
 import static io.netty.channel.socket.Tun4Packet.INET4_TYPE_OF_SERVICE_DELAY_MASK;
@@ -38,73 +39,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Tun4PacketTest {
+    private ByteBuf data;
     private Tun4Packet packet;
 
     @BeforeEach
     void setUp() {
-        ByteBuf data = Unpooled.wrappedBuffer(new byte[]{
-                69,
-                0,
-                0,
-                62,
-                -16,
-                125,
-                64,
-                0,
-                1,
-                17,
-                6,
-                1,
-                10,
-                -31,
-                -41,
-                84,
-                -32,
-                0,
-                0,
-                -5,
-                20,
-                -23,
-                20,
-                -23,
-                0,
-                42,
-                -107,
-                122,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                10,
-                114,
-                109,
-                119,
-                121,
-                122,
-                100,
-                105,
-                118,
-                117,
-                117,
-                5,
-                108,
-                111,
-                99,
-                97,
-                108,
-                0,
-                0,
-                1,
-                0,
-                1
+        data = wrappedBuffer(new byte[]{
+                // IPv4
+                (byte) 0x45, // version,
+                (byte) 0x00, // internet header length
+                (byte) 0x00, (byte) 0x3e, // header length
+                (byte) 0xf0, (byte) 0x7d, // identification
+                (byte) 0x40, (byte) 0x00, // flags (dont fragment)
+                (byte) 0x01, // time to live
+                (byte) 0x11, // protocol (UDP)
+                (byte) 0x06, (byte) 0x01, // header checksum
+                (byte) 0x0a, (byte) 0xe1, (byte) 0xd7, (byte) 0x54, // source address
+                (byte) 0xe0, (byte) 0x00, (byte) 0x00, (byte) 0xfb, // destination address
+                // UDP
+                (byte) 0x14, (byte) 0xe9, // source port
+                (byte) 0x14, (byte) 0xe9, // destination port
+                (byte) 0x00, (byte) 0x2a, // length
+                (byte) 0x95, (byte) 0x7a, // checksum
+                // Multicast DNS
+                (byte) 0x00, (byte) 0x00, // transaction id
+                (byte) 0x00, (byte) 0x00, // flags
+                (byte) 0x00, (byte) 0x01, // questions
+                (byte) 0x00, (byte) 0x00, // answer resource records
+                (byte) 0x00, (byte) 0x00, // authority resource records
+                (byte) 0x00, (byte) 0x00, // additional resource records
+                // additional resource records
+                (byte) 0x0a, (byte) 0x72, (byte) 0x6d, (byte) 0x77, (byte) 0x79, (byte) 0x7a,
+                (byte) 0x64, (byte) 0x69, (byte) 0x76, (byte) 0x75, (byte) 0x75, (byte) 0x05,
+                (byte) 0x6c, (byte) 0x6f, (byte) 0x63, (byte) 0x61, (byte) 0x6c, (byte) 0x00,
+                (byte) 0x00, (byte) 0x01, // type (A)
+                (byte) 0x00, (byte) 0x01, // class (IN)
         });
         packet = new Tun4Packet(data);
     }
@@ -188,50 +157,7 @@ class Tun4PacketTest {
 
     @Test
     void testData() {
-        assertArrayEquals(new byte[]{
-                20,
-                -23,
-                20,
-                -23,
-                0,
-                42,
-                -107,
-                122,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                10,
-                114,
-                109,
-                119,
-                121,
-                122,
-                100,
-                105,
-                118,
-                117,
-                117,
-                5,
-                108,
-                111,
-                99,
-                97,
-                108,
-                0,
-                0,
-                1,
-                0,
-                1
-        }, packet.data());
+        assertArrayEquals(ByteBufUtil.getBytes(data, 20, 42), packet.data());
     }
 
     @Test
@@ -241,8 +167,12 @@ class Tun4PacketTest {
 
     @Test
     void verifyChecksum() {
-        ByteBuf buf = Unpooled.wrappedBuffer(new byte[]{
-                69, 0, 0, 115, 0, 0, 64, 0, 64, 17, -72, 97, -64, -88, 0, 1, -64, -88, 0, -57
+        // from https://en.wikipedia.org/w/index.php?title=Internet_checksum&oldid=1096765534#Calculating_the_IPv4_header_checksum
+        ByteBuf buf = wrappedBuffer(new byte[]{
+                (byte) 0x45, (byte) 0x00, (byte) 0x00, (byte) 0x73, (byte) 0x00, (byte) 0x00,
+                (byte) 0x40, (byte) 0x00, (byte) 0x40, (byte) 0x11, (byte) 0xb8, (byte) 0x61,
+                (byte) 0xc0, (byte) 0xa8, (byte) 0x00, (byte) 0x01, (byte) 0xc0, (byte) 0xa8,
+                (byte) 0x00, (byte) 0xc7
         });
 
         Tun4Packet tun4Packet = new Tun4Packet(buf);
@@ -251,11 +181,16 @@ class Tun4PacketTest {
 
     @Test
     void calculateChecksum() {
-        // from https://en.wikipedia.org/wiki/IPv4_header_checksum#Calculating_the_IPv4_header_checksum
-        ByteBuf buf = Unpooled.wrappedBuffer(new byte[]{
-                69, 0, 0, 115, 0, 0, 64, 0, 64, 17, 0, 0, -64, -88, 0, 1, -64, -88, 0, -57
+        // from https://en.wikipedia.org/w/index.php?title=Internet_checksum&oldid=1096765534#Calculating_the_IPv4_header_checksum
+        ByteBuf buf = wrappedBuffer(new byte[]{
+                (byte) 0x45, (byte) 0x00, (byte) 0x00, (byte) 0x73, (byte) 0x00, (byte) 0x00,
+                (byte) 0x40, (byte) 0x00, (byte) 0x40, (byte) 0x11, (byte) 0x00, (byte) 0x00,
+                (byte) 0xc0, (byte) 0xa8, (byte) 0x00, (byte) 0x01, (byte) 0xc0, (byte) 0xa8,
+                (byte) 0x00, (byte) 0xc7
         });
 
-        assertEquals(47201, Tun4Packet.calculateChecksum(buf));
+        assertEquals(Ints.fromByteArray(new byte[]{
+                (byte) 0x00, (byte) 0x00, (byte) 0xb8, (byte) 0x61
+        }), Tun4Packet.calculateChecksum(buf));
     }
 }
