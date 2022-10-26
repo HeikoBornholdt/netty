@@ -79,6 +79,7 @@ public class TunEchoDevice {
                             ChannelPipeline p = ch.pipeline();
 
                             p.addLast(new Echo4Handler());
+                            p.addLast(new Echo6Handler());
                         }
                     });
             Channel ch = b.bind(new TunAddress(NAME)).syncUninterruptibly().channel();

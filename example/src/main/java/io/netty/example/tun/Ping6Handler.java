@@ -65,14 +65,7 @@ public class Ping6Handler extends SimpleChannelInboundHandler<Tun6Packet> {
 
                 System.out.println("Reply to echo ping request from " + source.getHostAddress());
                 TunPacket response = new Tun6Packet(buf);
-                ctx.writeAndFlush(response).addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) {
-                        if (!future.isSuccess()) {
-                            future.cause().printStackTrace();
-                        }
-                    }
-                });
+                ctx.writeAndFlush(response);
             } else {
                 System.out.println("Ignore non echo ping request from " + packet.sourceAddress().getHostAddress());
             }
