@@ -80,18 +80,18 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
         }
 
         // FIXME: dirty?
-        if (data instanceof AbstractDerivedByteBuf) {
+        ByteBuf family;
+        if (false && data instanceof AbstractDerivedByteBuf) {
             ByteBuf unwrap = data.unwrap();
-            if (unwrap.readerIndex() == 4 && unwrap.getInt(0) == version) {
-                data.readerIndex(0);
-            }
+            data = unwrap;
         }
         else {
             // add address family header
             // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten)
             // verwenden können. Gibt es da ne bessere alternative?
+            family = alloc().directBuffer(4);
             data = alloc().compositeDirectBuffer(2).
-                    addComponents(true, alloc().directBuffer(4).writeInt(version), data);
+                    addComponents(true, family.writeInt(version), data.retain());
         }
 
         try {
@@ -113,7 +113,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
 
             return writtenBytes > 0;
         } finally {
-            //data.release(); // FIXME: wegen den composite buff...
+            data.release(); // FIXME: wegen den composite buff...
         }
     }
 
