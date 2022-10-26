@@ -17,16 +17,11 @@ package io.netty.example.tun;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueTunChannel;
-import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.TunAddress;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -37,9 +32,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import static io.netty.channel.socket.Tun4Packet.INET4_DESTINATION_ADDRESS;
-import static io.netty.channel.socket.Tun4Packet.INET4_HEADER_LENGTH;
-import static io.netty.channel.socket.Tun4Packet.INET4_SOURCE_ADDRESS;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 public class TunEchoDevice {
@@ -109,7 +101,7 @@ public class TunEchoDevice {
             }
 
             System.out.println("Address and netmask assigned: " + ADDRESS.getHostAddress() + '/' + NETMASK);
-            System.out.println("All UDP datagrams addressed to this subnet should now be echoed back.");
+            System.out.println("All IP packets addressed to this subnet should now be echoed back.");
 
             ch.closeFuture().syncUninterruptibly();
         } catch (IOException e) {
@@ -128,31 +120,6 @@ public class TunEchoDevice {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-    }
-
-    private static class Echo4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
-        protected Echo4Handler() {
-            super(false);
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx,
-                                    Tun4Packet packet) throws Exception {
-            // swap source and destination addresses. Depending on the used layer 4 protocol this
-            // might require recalculating any present checksum. But UDP and TCP will work fine.
-            int sourceAddress = packet.content().getInt(INET4_SOURCE_ADDRESS);
-            int destinationAddress = packet.content().getInt(INET4_DESTINATION_ADDRESS);
-            packet.content().setInt(INET4_SOURCE_ADDRESS, destinationAddress);
-            packet.content().setInt(INET4_DESTINATION_ADDRESS, sourceAddress);
-
-            ctx.write(packet);
-        }
-
-        @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) {
-            ctx.fireChannelReadComplete();
-            ctx.flush();
         }
     }
 }
