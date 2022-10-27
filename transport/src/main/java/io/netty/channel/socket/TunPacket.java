@@ -28,7 +28,7 @@ import java.net.InetAddress;
  */
 @SuppressWarnings("java:S118")
 public abstract class TunPacket extends DefaultByteBufHolder {
-    protected TunPacket(ByteBuf data) {
+    protected TunPacket(final ByteBuf data) {
         super(data);
     }
 

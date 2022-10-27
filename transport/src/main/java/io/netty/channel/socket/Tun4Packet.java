@@ -18,6 +18,7 @@ package io.netty.channel.socket;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.internal.StringUtil;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -165,5 +166,68 @@ public class Tun4Packet extends TunPacket {
             sum += buf.getUnsignedShort(i);
         }
         return (~((sum & 0xffff) + (sum >> 16))) & 0xffff;
+    }
+
+    @SuppressWarnings({ "java:S107", "UnusedReturnValue" })
+    public static ByteBuf populatePacket(ByteBuf buf,
+                                         int typeOfService,
+                                         int identification,
+                                         int flags,
+                                         int fragmentOffset,
+                                         int timeToLive,
+                                         int protocol,
+                                         boolean calculateChecksum,
+                                         Inet4Address sourceAddress,
+                                         Inet4Address destinationAddress,
+                                         byte[] data) {
+        // version & ihl
+        int version = 4;
+        int ihl = 5;
+
+        int versionIhl = 0;
+        versionIhl |= (version & 0xf) << 4;
+        versionIhl |= ihl & 0xf;
+        buf.setByte(INET4_VERSION_AND_INTERNET_HEADER_LENGTH, versionIhl);
+
+        // type of service
+        buf.setShort(INET4_TYPE_OF_SERVICE, typeOfService);
+
+        // total length
+        int totalLength = ihl * 4 + data.length;
+        buf.setShort(INET4_TOTAL_LENGTH, totalLength);
+
+        // identification
+        buf.setShort(INET4_IDENTIFICATION, identification);
+
+        // flags & fragment offset
+        int flagsFragmentOffset = 0;
+        flagsFragmentOffset |= (flags & 0x7) << 5;
+        flagsFragmentOffset |= (fragmentOffset & 0x1f) << 3;
+        buf.setByte(INET4_FLAGS_AND_FRAGMENT_OFFSET, flagsFragmentOffset);
+
+        // time to live
+        buf.setByte(INET4_TIME_TO_LIVE, timeToLive);
+
+        // protocol
+        buf.setByte(INET4_PROTOCOL, protocol);
+
+        // source address
+        buf.setBytes(INET4_SOURCE_ADDRESS, sourceAddress.getAddress());
+
+        // destination address
+        buf.setBytes(INET4_DESTINATION_ADDRESS, destinationAddress.getAddress());
+
+        // header checksum
+        if (calculateChecksum) {
+            int headerChecksum = calculateChecksum(buf);
+            buf.setShort(INET4_HEADER_CHECKSUM, headerChecksum);
+        }
+
+        // data
+        buf.setBytes(INET4_HEADER_LENGTH, data);
+
+        buf.setIndex(0, totalLength);
+
+        return buf;
     }
 }

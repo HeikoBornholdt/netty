@@ -41,27 +41,27 @@ public class Ping4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
     public static final int ECHO_REPLY = 0;
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx,
-                                Tun4Packet packet) {
+    protected void channelRead0(final ChannelHandlerContext ctx,
+                                final Tun4Packet packet) {
         if (packet.protocol() == PROTOCOL) {
-            short icmpType = packet.content().getUnsignedByte(TYPE);
+            final short icmpType = packet.content().getUnsignedByte(TYPE);
             if (icmpType == ECHO) {
-                InetAddress source = packet.sourceAddress();
-                InetAddress destination = packet.destinationAddress();
-                int checksum = packet.content().getUnsignedShort(CHECKSUM);
+                final InetAddress source = packet.sourceAddress();
+                final InetAddress destination = packet.destinationAddress();
+                final int checksum = packet.content().getUnsignedShort(CHECKSUM);
 
                 // create response
-                ByteBuf buf = packet.content().retain();
+                final ByteBuf buf = packet.content().retain();
                 buf.setBytes(INET4_SOURCE_ADDRESS, destination.getAddress());
                 buf.setBytes(INET4_DESTINATION_ADDRESS, source.getAddress());
                 buf.setByte(TYPE, ECHO_REPLY);
                 buf.setShort(CHECKSUM, checksum + 0x0800);
 
                 System.out.println("Reply to echo ping request from " + source.getHostAddress());
-                TunPacket response = new Tun4Packet(buf);
+                final TunPacket response = new Tun4Packet(buf);
                 ctx.writeAndFlush(response).addListener(new ChannelFutureListener() {
                     @Override
-                    public void operationComplete(ChannelFuture future) {
+                    public void operationComplete(final ChannelFuture future) {
                         if (!future.isSuccess()) {
                             future.cause().printStackTrace();
                         }
