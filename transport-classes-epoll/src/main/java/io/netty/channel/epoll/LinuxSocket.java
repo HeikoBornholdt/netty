@@ -17,7 +17,6 @@ package io.netty.channel.epoll;
 
 import io.netty.channel.ChannelException;
 import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.socket.TunAddress;
 import io.netty.channel.unix.NativeInetAddress;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
@@ -30,20 +29,16 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 import static io.netty.channel.unix.Errors.ioResult;
-import static io.netty.channel.unix.Errors.newIOException;
 
 /**
  * A socket which provides access Linux native methods.
  */
 @UnstableApi
 public final class LinuxSocket extends Socket {
-    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION =
-            new IllegalArgumentException("Device name must be an ASCII string shorter than 16 characters or null.");
     static final InetAddress INET6_ANY = unsafeInetAddrByName("::");
     private static final InetAddress INET_ANY = unsafeInetAddrByName("0.0.0.0");
     private static final long MAX_UINT32_T = 0xFFFFFFFFL;
@@ -52,16 +47,12 @@ public final class LinuxSocket extends Socket {
         super(fd);
     }
 
-    LinuxSocket(int fd, boolean ipv6) {
-        super(fd, ipv6);
-    }
-
     InternetProtocolFamily family() {
         return ipv6 ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4;
     }
 
     int sendmmsg(NativeDatagramPacketArray.NativeDatagramPacket[] msgs,
-                 int offset, int len) throws IOException {
+                               int offset, int len) throws IOException {
         return Native.sendmmsg(intValue(), ipv6, msgs, offset, len);
     }
 
@@ -416,61 +407,14 @@ public final class LinuxSocket extends Socket {
     private static native void setIpFreeBind(int fd, int freeBind) throws IOException;
     private static native void setIpTransparent(int fd, int transparent) throws IOException;
     private static native void setIpRecvOrigDestAddr(int fd, int transparent) throws IOException;
-
     private static native void setTcpMd5Sig(
             int fd, boolean ipv6, byte[] address, int scopeId, byte[] key) throws IOException;
-
-    private static native int getInterface(int fd, boolean ipv6);
-
-    private static native int getIpMulticastLoop(int fd, boolean ipv6) throws IOException;
-
-
-    private static native void setTimeToLive(int fd, int ttl) throws IOException;
-
-    private static native int isUdpGro(int fd) throws IOException;
-
-    private static native void setUdpGro(int fd, int gro) throws IOException;
-
     private static native void setInterface(
-            int fd,
-            boolean ipv6,
-            byte[] interfaceAddress,
-            int scopeId,
-            int networkInterfaceIndex) throws IOException;
-
-    private static native void setIpMulticastLoop(int fd,
-                                                  boolean ipv6,
-                                                  int enabled) throws IOException;
-
-    public static LinuxSocket newSocketTun() {
-        int res = newSocketTunFd();
-        if (res < 0) {
-            throw new ChannelException(newIOException("newSocketTun", res));
-        }
-        return new LinuxSocket(res, false);
-    }
-
-    private static native int newSocketTunFd();
-
-    public void bindTun(final SocketAddress socketAddress) throws IOException {
-        if (socketAddress instanceof TunAddress) {
-            TunAddress addr = (TunAddress) socketAddress;
-
-            // use IFNAMSIZ instead of 16?
-            // FIXME: uncomment US_ASCII
-            if (addr.ifName() != null && (addr.ifName().length() >= 16/* || !US_ASCII.newEncoder().canEncode(addr.ifName())*/)) {
-                throw TUN_ILLEGAL_NAME_EXCEPTION;
-            }
-
-            int res = bindTun(intValue(), addr.ifName());
-            if (res < 0) {
-                throw newIOException("bind", res);
-            }
-        }
-        else {
-            throw new Error("Unexpected SocketAddress implementation " + socketAddress);
-        }
-    }
-
-    public static native int bindTun(int fd, String name);
+            int fd, boolean ipv6, byte[] interfaceAddress, int scopeId, int networkInterfaceIndex) throws IOException;
+    private static native int getInterface(int fd, boolean ipv6);
+    private static native int getIpMulticastLoop(int fd, boolean ipv6) throws IOException;
+    private static native void setIpMulticastLoop(int fd, boolean ipv6, int enabled) throws IOException;
+    private static native void setTimeToLive(int fd, int ttl) throws IOException;
+    private static native int isUdpGro(int fd) throws IOException;
+    private static native void setUdpGro(int fd, int gro) throws IOException;
 }

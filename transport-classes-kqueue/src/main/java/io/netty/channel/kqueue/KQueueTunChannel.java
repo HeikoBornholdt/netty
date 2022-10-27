@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
-import io.netty.channel.socket.TunChannel;
 import io.netty.channel.socket.TunPacket;
 import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.IovArray;
@@ -35,7 +34,7 @@ import java.nio.ByteBuffer;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
 
-public class KQueueTunChannel extends AbstractKQueueMessageChannel implements TunChannel {
+public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
@@ -51,7 +50,6 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
         return new KQueueTunChannelUnsafe();
     }
 
-    @Override
     protected boolean doWriteMessage(final Object msg) throws Exception {
         final ByteBuf data;
         if (msg instanceof TunPacket) {

@@ -18,7 +18,6 @@ package io.netty.channel.kqueue;
 import io.netty.channel.ChannelException;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.TunAddress;
 import io.netty.channel.unix.IovArray;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
