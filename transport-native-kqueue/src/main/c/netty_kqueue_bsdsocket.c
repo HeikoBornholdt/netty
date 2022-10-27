@@ -15,14 +15,20 @@
  */
 #include <assert.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/malloc.h>
+#include <sys/ioctl.h>
+#include <sys/kern_control.h>
 #include <sys/socket.h>
+#include <sys/sys_domain.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <sys/ucred.h>
+#include <net/if.h>
+#include <net/if_utun.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
@@ -136,6 +142,63 @@ static jint netty_kqueue_bsdsocket_connectx(JNIEnv* env, jclass clazz,
 #else
     return -ENOSYS;
 #endif
+}
+
+// TODO: wäre eigentlich schöner, wenn wir den code aus nettyNonBlockingSocket (netty_unix_socket.c) verwenden könnten...
+static jint netty_kqueue_bsdsocket_newSocketTunFd(JNIEnv* env, jclass clazz) {
+#ifdef SOCK_NONBLOCK
+    // TODO: funktioniert das hier eigentlich? Wann ist SOCK_NONBLOCK vorhanden????
+    return socket(AF_SYSTEM, SOCK_DGRAM | SOCK_NONBLOCK, SYSPROTO_CONTROL);
+#else
+    int socketFd = socket(AF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
+    int flags;
+    // Don't initialize flags until we know the socket is good so errno is preserved.
+    if (socketFd < 0 ||
+        (flags = fcntl(socketFd, F_GETFL, 0)) < 0 ||
+         fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+      return -1;
+    }
+    return socketFd;
+#endif
+}
+
+static jint netty_kqueue_bsdsocket_bindTun(JNIEnv* env, jclass clazz, jint fd, jint index) {
+    // mark socket as utun device
+    struct ctl_info ctlInfo;
+    memset(&ctlInfo, 0, sizeof(ctlInfo));
+    if (strlcpy(ctlInfo.ctl_name, UTUN_CONTROL_NAME, sizeof(ctlInfo.ctl_name)) >= sizeof(ctlInfo.ctl_name)) {
+        netty_unix_errors_throwIOException(env, "UTUN_CONTROL_NAME too long");
+        return -1;
+    }
+    if (ioctl(fd, CTLIOCGINFO, &ctlInfo) == -1) {
+        netty_unix_errors_throwIOException(env, "ioctl() failed");
+        return -1;
+    }
+
+    // define address of socket
+    struct sockaddr_ctl address;
+    address.sc_id = ctlInfo.ctl_id;
+    address.sc_len = sizeof(address);
+    address.sc_family = AF_SYSTEM;
+    address.ss_sysaddr = AF_SYS_CONTROL;
+    address.sc_unit = index;
+    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) == -1) {
+        netty_unix_errors_throwIOException(env, "connect() failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+static jstring netty_kqueue_bsdsocket_localAddressTun(JNIEnv* env, jclass clazz, jint fd) {
+    char sockName[IFNAMSIZ];
+    int sockNameLen = IFNAMSIZ;
+    if (getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, sockName, (uint32_t*) &sockNameLen) == -1) {
+        netty_unix_errors_throwIOException(env, "getsockopt() failed");
+        return NULL;
+    }
+
+    return (*env)->NewStringUTF(env, sockName);
 }
 
 static void netty_kqueue_bsdsocket_setAcceptFilter(JNIEnv* env, jclass clazz, jint fd, jstring afName, jstring afArg) {
@@ -267,7 +330,10 @@ static const JNINativeMethod fixed_method_table[] = {
   { "getTcpNoPush", "(I)I", (void *) netty_kqueue_bsdsocket_getTcpNoPush },
   { "getSndLowAt", "(I)I", (void *) netty_kqueue_bsdsocket_getSndLowAt },
   { "isTcpFastOpen", "(I)I", (void *) netty_kqueue_bsdsocket_isTcpFastOpen },
-  { "connectx", "(IIZ[BIIZ[BIIIJII)I", (void *) netty_kqueue_bsdsocket_connectx }
+  { "connectx", "(IIZ[BIIZ[BIIIJII)I", (void *) netty_kqueue_bsdsocket_connectx },
+  { "newSocketTunFd", "()I", (void *) netty_kqueue_bsdsocket_newSocketTunFd },
+  { "bindTun", "(II)I", (void *) netty_kqueue_bsdsocket_bindTun },
+  { "localAddressTun", "(I)Ljava/lang/String;", (void *) netty_kqueue_bsdsocket_localAddressTun },
 };
 
 static const jint fixed_method_table_size = sizeof(fixed_method_table) / sizeof(fixed_method_table[0]);
@@ -343,13 +409,13 @@ jint netty_kqueue_bsdsocket_JNI_OnLoad(JNIEnv* env, const char* packagePrefix) {
 
     NETTY_JNI_UTIL_FIND_CLASS(env, fileDescriptorCls, "java/io/FileDescriptor", done);
     NETTY_JNI_UTIL_GET_FIELD(env, fileDescriptorCls, fdFieldId, "fd", "I", done);
-  
+
     NETTY_JNI_UTIL_LOAD_CLASS(env, stringClass, "java/lang/String", done);
 
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials", nettyClassName, done);
     NETTY_JNI_UTIL_LOAD_CLASS(env, peerCredentialsClass, nettyClassName, done);
     netty_jni_util_free_dynamic_name(&nettyClassName);
-  
+
     NETTY_JNI_UTIL_GET_METHOD(env, peerCredentialsClass, peerCredentialsMethodId, "<init>", "(II[I)V", done);
     ret = NETTY_JNI_UTIL_JNI_VERSION;
 done:
