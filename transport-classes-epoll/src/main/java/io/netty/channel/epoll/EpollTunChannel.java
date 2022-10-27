@@ -37,7 +37,7 @@ import static io.netty.channel.epoll.LinuxSocket.newSocketTun;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
- * {@link TunChannel} implementation that uses linux EPOLL Edge-Triggered Mode for maximal
+ * {@link TunChannel} implementation that uses linux epoll Edge-Triggered Mode for maximal
  * performance.
  */
 public class EpollTunChannel extends AbstractEpollChannel implements TunChannel {
@@ -161,12 +161,12 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
 
     @Override
     protected void doRegister() {
-        // do nothing
+        // skip registration to EpollEventLoop as TUN device must be created first
     }
 
     @Override
     protected void doBind(SocketAddress local) throws Exception {
-        // doRegister muss nach bindTun erfolgen, weil sonst epollCtlAdd nicht funktioniert
+        // TUN device must be bound before added to EpollEventLoop
         this.local = socket.bindTun(local);
         super.doRegister();
         active = true;
