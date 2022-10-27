@@ -82,9 +82,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
         // FIXME: dirty?
         ByteBuf family;
         if (false && data instanceof AbstractDerivedByteBuf) {
-            System.out.println("data = " + data);
             ByteBuf unwrap = data.unwrap();
-            System.out.println("unwrap = " + unwrap);
             data = unwrap;
         }
         else {

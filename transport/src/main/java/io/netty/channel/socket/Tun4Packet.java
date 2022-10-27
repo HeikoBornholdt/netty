@@ -18,7 +18,6 @@ package io.netty.channel.socket;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.internal.StringUtil;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -113,7 +112,7 @@ public class Tun4Packet extends TunPacket {
             try {
                 byte[] dst = new byte[INET4_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET4_SOURCE_ADDRESS, dst, 0, INET4_SOURCE_ADDRESS_LENGTH);
-                sourceAddress = Inet4Address.getByAddress(dst);
+                sourceAddress = InetAddress.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
@@ -129,7 +128,7 @@ public class Tun4Packet extends TunPacket {
             try {
                 byte[] dst = new byte[INET4_DESTINATION_ADDRESS_LENGTH];
                 content().getBytes(INET4_DESTINATION_ADDRESS, dst, 0, INET4_DESTINATION_ADDRESS_LENGTH);
-                destinationAddress = Inet4Address.getByAddress(dst);
+                destinationAddress = InetAddress.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
