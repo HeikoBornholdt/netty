@@ -52,6 +52,7 @@ EXAMPLE_MAP=(
   'socksproxy-server:io.netty.example.socksproxy.SocksServer'
   'memcache-binary-client:io.netty.example.memcache.binary.MemcacheClient'
   'stomp-client:io.netty.example.stomp.StompClient'
+  'tun-echo-device:io.netty.example.tun.TunEchoDevice'
   'uptime-client:io.netty.example.uptime.UptimeClient'
   'uptime-server:io.netty.example.uptime.UptimeServer'
   'sctpecho-client:io.netty.example.sctp.SctpEchoClient'
