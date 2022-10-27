@@ -16,11 +16,13 @@
 package io.netty.channel.socket;
 
 import java.net.SocketAddress;
+import java.util.Objects;
 
 /**
  * A {@link SocketAddress} implementation that identifies a tun device to which a {@link TunChannel}
  * can be bound to.
  */
+// FIXME: move to transport module?
 public class TunAddress extends SocketAddress {
     private static final long serialVersionUID = -584786182484350484L; // NOSONAR
     private final String ifName;
