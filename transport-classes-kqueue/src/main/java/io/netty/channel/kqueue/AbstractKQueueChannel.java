@@ -71,7 +71,7 @@ abstract class AbstractKQueueChannel extends AbstractChannel implements UnixChan
     boolean readReadyRunnablePending;
     boolean inputClosedSeenErrorOnRead;
     protected volatile boolean active;
-    protected volatile SocketAddress local;
+    private volatile SocketAddress local;
     private volatile SocketAddress remote;
 
     AbstractKQueueChannel(Channel parent, BsdSocket fd, boolean active) {
