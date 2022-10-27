@@ -432,13 +432,13 @@ jint netty_kqueue_bsdsocket_JNI_OnLoad(JNIEnv* env, const char* packagePrefix) {
 
     NETTY_JNI_UTIL_FIND_CLASS(env, fileDescriptorCls, "java/io/FileDescriptor", done);
     NETTY_JNI_UTIL_GET_FIELD(env, fileDescriptorCls, fdFieldId, "fd", "I", done);
-
+  
     NETTY_JNI_UTIL_LOAD_CLASS(env, stringClass, "java/lang/String", done);
 
     NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/channel/unix/PeerCredentials", nettyClassName, done);
     NETTY_JNI_UTIL_LOAD_CLASS(env, peerCredentialsClass, nettyClassName, done);
     netty_jni_util_free_dynamic_name(&nettyClassName);
-
+  
     NETTY_JNI_UTIL_GET_METHOD(env, peerCredentialsClass, peerCredentialsMethodId, "<init>", "(II[I)V", done);
     ret = NETTY_JNI_UTIL_JNI_VERSION;
 done:
