@@ -150,12 +150,12 @@
       <version>${project.version}</version>
       <classifier>linux-${os.detected.arch}</classifier>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>io.netty</groupId>-->
-<!--      <artifactId>netty-transport-native-kqueue</artifactId>-->
-<!--      <version>${project.version}</version>-->
-<!--      <classifier>osx-${os.detected.arch}</classifier>-->
-<!--    </dependency>-->
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-kqueue</artifactId>
+      <version>${project.version}</version>
+      <classifier>osx-${os.detected.arch}</classifier>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>netty-transport-udt</artifactId>

@@ -35,7 +35,6 @@ import java.nio.ByteBuffer;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
 
-// FIXME: close function richtig implementiert?
 public class KQueueTunChannel extends AbstractKQueueMessageChannel implements TunChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
@@ -143,7 +142,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
                 try {
                     do {
                         byteBuf = allocHandle.allocate(allocator);
-                        allocHandle.attemptedBytesRead(byteBuf.writableBytes()); // FIXME: auf MTU stellen?
+                        allocHandle.attemptedBytesRead(byteBuf.writableBytes());
 
                         final TunPacket packet;
                         try {
@@ -164,9 +163,8 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
                             break;
                         }
 
-                        // FIXME: extract ip version
+                        // extract ip version
                         //byteBuf.readerIndex(4); // FIXME: ja?
-                        // FIXME: remove header?
 
                         final int version = (byteBuf.getByte(4) & 0xff) >> 4;
                         if (version == 4) {
