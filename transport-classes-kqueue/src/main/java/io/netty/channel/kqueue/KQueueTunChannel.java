@@ -42,12 +42,13 @@ import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
  * {@link DatagramChannel} implementation that uses linux Kqueue Edge-Triggered Mode for
  * maximal performance.
  */
+// FIXME: close function richtig implementiert?
 public class KQueueTunChannel extends AbstractKQueueMessageChannel implements TunChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
-    static final int AF_INET = 2; // FIXME: read from C?
-    static final int AF_INET6 = 30; // FIXME: read from C?
+    public static final int AF_INET = 2; // FIXME: read from C?
+    public static final int AF_INET6 = 30; // FIXME: read from C?
     private final KQueueTunChannelConfig config;
 
     public KQueueTunChannel() {
