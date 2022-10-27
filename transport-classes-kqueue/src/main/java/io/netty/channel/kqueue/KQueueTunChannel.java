@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
 
-public class KQueueTunChannel extends AbstractKQueueDatagramChannel {
+public class KQueueTunChannel extends AbstractKQueueMessageChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
