@@ -41,25 +41,11 @@ public class TunEchoDevice {
     }
 
     public static void main(String[] args) throws Exception {
-        EventLoopGroup group;
-        Class<? extends Channel> channelClass;
-        if (PlatformDependent.isLinux()) {
-            group = new EpollEventLoopGroup(1);
-            channelClass = EpollTunChannel.class;
-        }
-        if (PlatformDependent.isOsx()) {
-            group = new KQueueEventLoopGroup(1);
-            channelClass = KQueueTunChannel.class;
-        }
-        else {
-            throw new RuntimeException("Unsupported platform: This example only work on Linux or macOS");
-        }
-
+        EventLoopGroup group = new KQueueEventLoopGroup(1);
         try {
-            java.lang.Class<? extends Channel> channelClass = KQueueTunChannel.class;
             final Bootstrap b = new Bootstrap()
                     .group(group)
-                    .channel(channelClass)
+                    .channel(KQueueTunChannel.class)
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(final Channel ch) {
@@ -84,6 +70,9 @@ public class TunEchoDevice {
                 else {
                     throw new RuntimeException("Unhandled address type: " + ADDRESS);
                 }
+            }
+            else {
+                throw new RuntimeException("Unsupported platform: Must be run on macOS or Linux");
             }
 
             System.out.println("Address assigned: " + ADDRESS.getHostAddress());

@@ -1,18 +1,3 @@
-/*
- * Copyright 2022 The Netty Project
- *
- * The Netty Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
 package io.netty.channel.socket;
 
 import io.netty.buffer.ByteBuf;
@@ -77,7 +62,8 @@ public class Tun6Packet extends TunPacket {
                 byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET6_SOURCE_ADDRESS, dst, 0, INET6_SOURCE_ADDRESS_LENGTH);
                 sourceAddress = InetAddress.getByAddress(dst);
-            } catch (final UnknownHostException e) {
+            }
+            catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
@@ -93,7 +79,8 @@ public class Tun6Packet extends TunPacket {
                 byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET6_DESTINATION_ADDRESS, dst, 0, INET6_DESTINATION_ADDRESS_LENGTH);
                 destinationAddress = InetAddress.getByAddress(dst);
-            } catch (final UnknownHostException e) {
+            }
+            catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
