@@ -15,10 +15,8 @@
  */
 package io.netty.channel.kqueue;
 
-import io.netty.buffer.AbstractDerivedByteBuf;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.SlicedByteBuf;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.Tun4Packet;
@@ -79,20 +77,11 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
             return true;
         }
 
-        // FIXME: dirty?
-        if (data instanceof AbstractDerivedByteBuf) {
-            ByteBuf unwrap = data.unwrap();
-            if (unwrap.readerIndex() == 4 && unwrap.getInt(0) == version) {
-                data.readerIndex(0);
-            }
-        }
-        else {
-            // add address family header
-            // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten)
-            // verwenden können. Gibt es da ne bessere alternative?
-            data = alloc().compositeDirectBuffer(2).
-                    addComponents(true, alloc().directBuffer(4).writeInt(version), data);
-        }
+        // add address family header
+        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten)
+        // verwenden können. Gibt es da ne bessere alternative?
+        data = alloc().compositeDirectBuffer(2).
+                addComponents(true, alloc().directBuffer(4).writeInt(version), data);
 
         try {
             final long writtenBytes;
@@ -113,7 +102,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
 
             return writtenBytes > 0;
         } finally {
-            //data.release(); // FIXME: wegen den composite buff...
+            data.release(); // FIXME: wegen den composite buff...
         }
     }
 

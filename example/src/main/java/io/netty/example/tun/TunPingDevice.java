@@ -64,11 +64,11 @@ public class TunPingDevice {
     }
 
     public static void main(String[] args) throws Exception {
-//        for (int i = 0; i < 10; i++) {
-//            System.out.println("Wait " + (10 - i) + "s...");
-//            Thread.sleep(1000);
-//        }
-//        System.out.println("geht los");
+        for (int i = 0; i < 10; i++) {
+            System.out.println("Wait " + (10 - i) + "s...");
+            Thread.sleep(1000);
+        }
+        System.out.println("geht los");
 
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
