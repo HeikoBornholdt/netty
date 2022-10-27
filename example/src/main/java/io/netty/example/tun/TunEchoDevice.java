@@ -17,8 +17,6 @@ package io.netty.example.tun;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -139,12 +137,22 @@ public class TunEchoDevice {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx,
                                     Tun4Packet packet) throws Exception {
-            // swap source and destination addresses. Depending on the used layer 4 protocol this
-            // might require recalculating any present checksum. But UDP and TCP will work fine.
-            int sourceAddress = packet.content().getInt(INET4_SOURCE_ADDRESS);
-            int destinationAddress = packet.content().getInt(INET4_DESTINATION_ADDRESS);
-            packet.content().setInt(INET4_SOURCE_ADDRESS, destinationAddress);
-            packet.content().setInt(INET4_DESTINATION_ADDRESS, sourceAddress);
+            // switch IP addresses
+            InetAddress sourceAddress = packet.sourceAddress();
+            InetAddress destinationAddress = packet.destinationAddress();
+            System.out.println("READ srcAddr=" + packet + ", dstAddr=" + destinationAddress);
+            packet.content().setBytes(INET4_SOURCE_ADDRESS, destinationAddress.getAddress());
+            packet.content().setBytes(INET4_DESTINATION_ADDRESS, sourceAddress.getAddress());
+
+            // switch UDP ports
+            int sourcePort = packet.content().getUnsignedShort(INET4_HEADER_LENGTH + 0);
+            int destinationPort= packet.content().getUnsignedShort(INET4_HEADER_LENGTH + 2);
+            System.out.println("READ srcPrt=" + sourcePort + ", dstPrt=" + destinationPort);
+            packet.content().setShort(INET4_HEADER_LENGTH + 0, destinationPort);
+            packet.content().setShort(INET4_HEADER_LENGTH + 2, sourcePort);
+
+            System.out.println("WRITE srcAddr=" + packet + ", dstAddr=" + destinationAddress);
+            System.out.println("WRITE srcPrt=" + sourcePort + ", dstPrt=" + destinationPort);
 
             ctx.write(packet);
         }
