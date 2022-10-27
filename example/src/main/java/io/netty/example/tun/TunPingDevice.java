@@ -37,12 +37,12 @@ import java.util.Arrays;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
- * Creates a TUN device that replies to received ICMP echo requests.
- * <p/>
+ * Creates a TUN device that will reply to ICMP echo requests.
+ *
  * <h2>Usage:</h2>
  *
  * <pre>
- *     ./run-example tun-ping-device -Daddress=fc00::1 -Dnetmask=120 -Dmtu=1500
+ *     ./run-example tun-ping-device -Daddress=fc00::1 -Dnetmask=120
  * </pre>
  *
  * In another shell:
@@ -54,7 +54,6 @@ public class TunPingDevice {
     static final String NAME = System.getProperty("name", null);
     static final InetAddress ADDRESS;
     static final int NETMASK = Integer.parseInt(System.getProperty("netmask", "24"));
-    static final int MTU = Integer.parseInt(System.getProperty("mtu", "1500"));
 
     static {
         try {
@@ -65,6 +64,12 @@ public class TunPingDevice {
     }
 
     public static void main(String[] args) throws Exception {
+//        for (int i = 0; i < 10; i++) {
+//            System.out.println("Wait " + (10 - i) + "s...");
+//            Thread.sleep(1000);
+//        }
+//        System.out.println("geht los");
+
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
 //        if (PlatformDependent.isOsx()) {
@@ -83,7 +88,7 @@ public class TunPingDevice {
             Bootstrap b = new Bootstrap()
                     .group(group)
                     .channel(channelClass)
-                    .option(TUN_MTU, MTU)
+                    .option(TUN_MTU, 1200)
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(Channel ch) {
