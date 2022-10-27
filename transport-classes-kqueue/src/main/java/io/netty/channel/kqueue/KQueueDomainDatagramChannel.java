@@ -40,7 +40,7 @@ import java.nio.ByteBuffer;
 import static io.netty.channel.kqueue.BsdSocket.newSocketDomainDgram;
 
 @UnstableApi
-public final class KQueueDomainDatagramChannel extends AbstractKQueueMessageChannel implements DomainDatagramChannel {
+public final class KQueueDomainDatagramChannel extends AbstractKQueueDatagramChannel implements DomainDatagramChannel {
 
     private static final String EXPECTED_TYPES =
             " (expected: " +

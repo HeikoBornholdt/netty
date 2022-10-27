@@ -21,11 +21,11 @@ import io.netty.channel.ChannelOutboundBuffer;
 
 import java.io.IOException;
 
-abstract class AbstractKQueueMessageChannel extends AbstractKQueueChannel {
+abstract class AbstractKQueueDatagramChannel extends AbstractKQueueChannel {
 
     private static final ChannelMetadata METADATA = new ChannelMetadata(true);
 
-    AbstractKQueueMessageChannel(Channel parent, BsdSocket fd, boolean active) {
+    AbstractKQueueDatagramChannel(Channel parent, BsdSocket fd, boolean active) {
         super(parent, fd, active);
     }
 
