@@ -182,7 +182,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
                 try {
                     do {
                         byteBuf = allocHandle.allocate(allocator);
-                        allocHandle.attemptedBytesRead(byteBuf.writableBytes());
+                        allocHandle.attemptedBytesRead(byteBuf.writableBytes()); // FIXME: auf MTU stellen?
 
                         final TunPacket packet;
                         try {
