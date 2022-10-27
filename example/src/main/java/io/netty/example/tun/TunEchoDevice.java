@@ -16,7 +16,9 @@
 package io.netty.example.tun;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -36,7 +38,6 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import static io.netty.channel.socket.Tun4Packet.INET4_DESTINATION_ADDRESS;
-import static io.netty.channel.socket.Tun4Packet.INET4_HEADER_LENGTH;
 import static io.netty.channel.socket.Tun4Packet.INET4_SOURCE_ADDRESS;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
@@ -137,22 +138,11 @@ public class TunEchoDevice {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx,
                                     Tun4Packet packet) throws Exception {
-            // switch IP addresses
-            InetAddress sourceAddress = packet.sourceAddress();
-            InetAddress destinationAddress = packet.destinationAddress();
-            System.out.println("READ srcAddr=" + packet + ", dstAddr=" + destinationAddress);
-            packet.content().setBytes(INET4_SOURCE_ADDRESS, destinationAddress.getAddress());
-            packet.content().setBytes(INET4_DESTINATION_ADDRESS, sourceAddress.getAddress());
-
-            // switch UDP ports
-            int sourcePort = packet.content().getUnsignedShort(INET4_HEADER_LENGTH + 0);
-            int destinationPort= packet.content().getUnsignedShort(INET4_HEADER_LENGTH + 2);
-            System.out.println("READ srcPrt=" + sourcePort + ", dstPrt=" + destinationPort);
-            packet.content().setShort(INET4_HEADER_LENGTH + 0, destinationPort);
-            packet.content().setShort(INET4_HEADER_LENGTH + 2, sourcePort);
-
-            System.out.println("WRITE srcAddr=" + packet + ", dstAddr=" + destinationAddress);
-            System.out.println("WRITE srcPrt=" + sourcePort + ", dstPrt=" + destinationPort);
+            // switch addresses
+            InetAddress source = packet.sourceAddress();
+            InetAddress destination = packet.destinationAddress();
+            packet.content().setBytes(INET4_SOURCE_ADDRESS, destination.getAddress());
+            packet.content().setBytes(INET4_DESTINATION_ADDRESS, source.getAddress());
 
             ctx.write(packet);
         }
