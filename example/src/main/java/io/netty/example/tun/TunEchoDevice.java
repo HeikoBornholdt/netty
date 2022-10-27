@@ -37,7 +37,7 @@ import java.util.Arrays;
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
- * Creates a TUN device that echoes all received IP packets.
+ * Creates a TUN device that echoes back all received IP packets.
  * <p/>
  * <h2>Usage Example:</h2>
  *
