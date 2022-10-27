@@ -61,29 +61,20 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
                 break;
             }
 
-            try {
-                boolean done = false;
-                for (int i = config().getWriteSpinCount(); i > 0; --i) {
-                    if (doWriteMessage(msg)) {
-                        done = true;
-                        break;
-                    }
-                }
-
-                if (done) {
-                    in.remove();
-                    maxMessagesPerWrite--;
-                }
-                else {
+            boolean done = false;
+            for (int i = config().getWriteSpinCount(); i > 0; --i) {
+                if (doWriteMessage(msg)) {
+                    done = true;
                     break;
                 }
             }
-            catch (IOException e) {
+
+            if (done) {
+                in.remove();
                 maxMessagesPerWrite--;
-                // Continue on write error as a DatagramChannel can write to multiple remote peers
-                //
-                // See https://github.com/netty/netty/issues/2665
-                in.remove(e);
+            }
+            else {
+                break;
             }
         }
 
@@ -161,12 +152,12 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
 
     @Override
     protected void doRegister() {
-        // skip registration to EpollEventLoop as TUN device must be created first
+        // skip registration at EpollEventLoop, since TUN device must be bound first
     }
 
     @Override
     protected void doBind(SocketAddress local) throws Exception {
-        // TUN device must be bound before added to EpollEventLoop
+        // TUN device must be bound before adding to EpollEventLoop
         this.local = socket.bindTun(local);
         super.doRegister();
         active = true;
