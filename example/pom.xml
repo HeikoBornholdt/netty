@@ -144,18 +144,18 @@
       <groupId>com.yammer.metrics</groupId>
       <artifactId>metrics-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-epoll</artifactId>
-      <version>${project.version}</version>
-      <classifier>linux-${os.detected.arch}</classifier>
-    </dependency>
 <!--    <dependency>-->
 <!--      <groupId>io.netty</groupId>-->
-<!--      <artifactId>netty-transport-native-kqueue</artifactId>-->
+<!--      <artifactId>netty-transport-native-epoll</artifactId>-->
 <!--      <version>${project.version}</version>-->
-<!--      <classifier>osx-${os.detected.arch}</classifier>-->
+<!--      <classifier>linux-${os.detected.arch}</classifier>-->
 <!--    </dependency>-->
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-kqueue</artifactId>
+      <version>${project.version}</version>
+      <classifier>osx-${os.detected.arch}</classifier>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>netty-transport-udt</artifactId>
@@ -171,7 +171,7 @@
       <artifactId>logback-classic</artifactId>
       <scope>runtime</scope>
     </dependency>
-
+    
     <!-- Needed for OCSP -->
     <dependency>
       <groupId>org.bouncycastle</groupId>

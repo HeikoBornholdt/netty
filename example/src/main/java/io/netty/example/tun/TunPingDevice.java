@@ -20,10 +20,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollTunChannel;
-//import io.netty.channel.kqueue.KQueueEventLoopGroup;
-//import io.netty.channel.kqueue.KQueueTunChannel;
+//import io.netty.channel.epoll.EpollEventLoopGroup;
+//import io.netty.channel.epoll.EpollTunChannel;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueTunChannel;
 import io.netty.channel.socket.TunAddress;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -66,12 +66,12 @@ public class TunPingDevice {
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
 //        if (PlatformDependent.isOsx()) {
-//            group = new KQueueEventLoopGroup(1);
-//            channelClass = KQueueTunChannel.class;
+            group = new KQueueEventLoopGroup(1);
+            channelClass = KQueueTunChannel.class;
 //        }
 //        else if (!PlatformDependent.isWindows()) {
-            group = new EpollEventLoopGroup(1);
-            channelClass = EpollTunChannel.class;
+//            group = new EpollEventLoopGroup(1);
+//            channelClass = EpollTunChannel.class;
 //        }
 //        else {
 //            throw new RuntimeException("Unsupported platform: This example only work on Linux or macOS");
