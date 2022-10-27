@@ -16,8 +16,6 @@
 package io.netty.example.tun;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.Tun6Packet;
@@ -65,6 +63,7 @@ public class Ping6Handler extends SimpleChannelInboundHandler<Tun6Packet> {
 
                 System.out.println("Reply to echo ping request from " + source.getHostAddress());
                 TunPacket response = new Tun6Packet(buf);
+
                 ctx.writeAndFlush(response);
             } else {
                 System.out.println("Ignore non echo ping request from " + packet.sourceAddress().getHostAddress());

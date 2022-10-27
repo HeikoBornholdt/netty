@@ -2,7 +2,6 @@ package io.netty.example.tun;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
 
 import static io.netty.channel.socket.Tun4Packet.INET4_DESTINATION_ADDRESS;
@@ -21,8 +20,9 @@ class Echo6Handler extends SimpleChannelInboundHandler<Tun6Packet> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx,
                                 Tun6Packet packet) throws Exception {
-        // swap source and destination addresses. Depending on the used layer 4 protocol this
-        // might require recalculating any present checksum. But UDP and TCP will work fine.
+        // swap source and destination addresses. Depending on the Layer 4 protocol used, this may
+        // require recalculation of existing checksums. However, UDP and TCP work without
+        // recalculation.
         int sourceAddress = packet.content().getInt(INET6_SOURCE_ADDRESS);
         int destinationAddress = packet.content().getInt(INET6_DESTINATION_ADDRESS);
         packet.content().setInt(INET4_SOURCE_ADDRESS, destinationAddress);
