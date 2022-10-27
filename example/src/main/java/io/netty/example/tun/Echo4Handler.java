@@ -18,9 +18,8 @@ class Echo4Handler extends SimpleChannelInboundHandler<Tun4Packet> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx,
                                 Tun4Packet packet) throws Exception {
-        // swap source and destination addresses. Depending on the Layer 4 protocol used, this may
-        // require recalculation of existing checksums. However, UDP and TCP work without
-        // recalculation.
+        // swap source and destination addresses. Depending on the used layer 4 protocol this
+        // might require recalculating any present checksum. But UDP and TCP will work fine.
         int sourceAddress = packet.content().getInt(INET4_SOURCE_ADDRESS);
         int destinationAddress = packet.content().getInt(INET4_DESTINATION_ADDRESS);
         packet.content().setInt(INET4_SOURCE_ADDRESS, destinationAddress);
