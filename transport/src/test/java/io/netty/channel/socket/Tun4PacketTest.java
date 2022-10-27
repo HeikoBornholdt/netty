@@ -157,7 +157,7 @@ class Tun4PacketTest {
 
     @Test
     void testData() {
-        assertEquals(data.slice(20, 42), packet.data());
+        assertArrayEquals(ByteBufUtil.getBytes(data, 20, 42), packet.data());
     }
 
     @Test

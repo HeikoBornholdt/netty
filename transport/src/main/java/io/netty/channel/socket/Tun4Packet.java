@@ -136,18 +136,13 @@ public class Tun4Packet extends TunPacket {
         return destinationAddress;
     }
 
-    /**
-     * Returns the remaining data behind the IP header. Modifying the content of the returned buffer
-     * or this packet's buffer affects each other's content while they maintain separate indexes and
-     * marks.
-     * <p>
-     * Also be aware that this method will NOT call {@link #retain()} and so the reference count
-     * will NOT be increased.
-     */
-    public ByteBuf data() {
-        return content().slice(INET4_HEADER_LENGTH, content().readableBytes() - INET4_HEADER_LENGTH);
+    public byte[] data() {
+        byte[] data = new byte[content().readableBytes() - INET4_HEADER_LENGTH];
+        content().getBytes(INET4_HEADER_LENGTH, data);
+        return data;
     }
 
+    @SuppressWarnings("StringBufferReplaceableByString")
     @Override
     public String toString() {
         return new StringBuilder(StringUtil.simpleClassName(this))
