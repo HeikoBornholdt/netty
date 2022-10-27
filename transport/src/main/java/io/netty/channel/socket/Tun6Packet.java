@@ -39,7 +39,7 @@ public class Tun6Packet extends TunPacket {
     private InetAddress sourceAddress;
     private InetAddress destinationAddress;
 
-    public Tun6Packet(ByteBuf data) {
+    public Tun6Packet(final ByteBuf data) {
         super(data);
     }
 
@@ -77,7 +77,7 @@ public class Tun6Packet extends TunPacket {
                 byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET6_SOURCE_ADDRESS, dst, 0, INET6_SOURCE_ADDRESS_LENGTH);
                 sourceAddress = InetAddress.getByAddress(dst);
-            } catch (UnknownHostException e) {
+            } catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
@@ -93,7 +93,7 @@ public class Tun6Packet extends TunPacket {
                 byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET6_DESTINATION_ADDRESS, dst, 0, INET6_DESTINATION_ADDRESS_LENGTH);
                 destinationAddress = InetAddress.getByAddress(dst);
-            } catch (UnknownHostException e) {
+            } catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
@@ -102,7 +102,7 @@ public class Tun6Packet extends TunPacket {
     }
 
     public byte[] data() {
-        byte[] data = new byte[content().readableBytes() - INET6_HEADER_LENGTH];
+        final byte[] data = new byte[content().readableBytes() - INET6_HEADER_LENGTH];
         content().getBytes(INET6_HEADER_LENGTH, data);
         return data;
     }

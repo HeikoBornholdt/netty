@@ -16,56 +16,13 @@
 package io.netty.channel.kqueue;
 
 import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.socket.TunChannelConfig;
-
-import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
  * A {@link ChannelConfig} for a {@link KQueueTunChannel}.
  */
-public class KQueueTunChannelConfig extends KQueueChannelConfig implements TunChannelConfig {
-    private int mtu;
-
+public class KQueueTunChannelConfig extends KQueueChannelConfig {
     KQueueTunChannelConfig(final AbstractKQueueChannel channel) {
         super(channel, new FixedRecvByteBufAllocator(2048));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getOption(final ChannelOption<T> option) {
-        if (option == TUN_MTU) {
-            return (T) Integer.valueOf(getMtu());
-        }
-        return super.getOption(option);
-    }
-
-    @Override
-    public <T> boolean setOption(ChannelOption<T> option, T value) {
-        if (!super.setOption(option, value)) {
-            if (option == TUN_MTU) {
-                setMtu((Integer) value);
-            }
-            else {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public int getMtu() {
-        return mtu;
-    }
-
-    @Override
-    public TunChannelConfig setMtu(final int mtu) {
-        if (mtu < 0) {
-            throw new IllegalArgumentException("mtu must be non-negative.");
-        }
-        this.mtu = mtu;
-        return null;
     }
 }

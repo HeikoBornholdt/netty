@@ -17,14 +17,10 @@ package io.netty.channel.socket;
 
 import io.netty.channel.Channel;
 
-import java.io.IOException;
-
 /**
  * A TUN device-backed {@link Channel}.
  */
 public interface TunChannel extends Channel {
     @Override
     TunAddress localAddress();
-
-    int mtu() throws IOException;
 }

@@ -34,7 +34,6 @@ import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 
 import static io.netty.channel.epoll.LinuxSocket.newSocketTun;
-import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
  * {@link TunChannel} implementation that uses linux EPOLL Edge-Triggered Mode for maximal
@@ -150,11 +149,6 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
     }
 
     @Override
-    public int mtu() throws IOException {
-        return LinuxSocket.getMtu(localAddress().ifName());
-    }
-
-    @Override
     protected AbstractEpollUnsafe newUnsafe() {
         return new EpollTunChannelUnsafe();
     }
@@ -170,11 +164,6 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
         this.local = socket.bindTun(local);
         super.doRegister();
         active = true;
-
-        final int mtu = config.getOption(TUN_MTU);
-        if (mtu > 0) {
-            LinuxSocket.setMtu(((TunAddress) this.local).ifName(), mtu);
-        }
     }
 
     protected class EpollTunChannelUnsafe extends AbstractEpollUnsafe {

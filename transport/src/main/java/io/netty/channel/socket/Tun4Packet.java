@@ -57,7 +57,7 @@ public class Tun4Packet extends TunPacket {
     private InetAddress sourceAddress;
     private InetAddress destinationAddress;
 
-    public Tun4Packet(ByteBuf data) {
+    public Tun4Packet(final ByteBuf data) {
         super(data);
         if (data.readableBytes() < INET4_HEADER_LENGTH) {
             throw new IllegalArgumentException("data has only " + data.readableBytes() +
@@ -114,7 +114,7 @@ public class Tun4Packet extends TunPacket {
                 byte[] dst = new byte[INET4_SOURCE_ADDRESS_LENGTH];
                 content().getBytes(INET4_SOURCE_ADDRESS, dst, 0, INET4_SOURCE_ADDRESS_LENGTH);
                 sourceAddress = InetAddress.getByAddress(dst);
-            } catch (UnknownHostException e) {
+            } catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
@@ -130,7 +130,7 @@ public class Tun4Packet extends TunPacket {
                 byte[] dst = new byte[INET4_DESTINATION_ADDRESS_LENGTH];
                 content().getBytes(INET4_DESTINATION_ADDRESS, dst, 0, INET4_DESTINATION_ADDRESS_LENGTH);
                 destinationAddress = InetAddress.getByAddress(dst);
-            } catch (UnknownHostException e) {
+            } catch (final UnknownHostException e) {
                 // unreachable code
                 throw new IllegalStateException();
             }
@@ -139,7 +139,7 @@ public class Tun4Packet extends TunPacket {
     }
 
     public byte[] data() {
-        byte[] data = new byte[content().readableBytes() - INET4_HEADER_LENGTH];
+        final byte[] data = new byte[content().readableBytes() - INET4_HEADER_LENGTH];
         content().getBytes(INET4_HEADER_LENGTH, data);
         return data;
     }
@@ -160,7 +160,7 @@ public class Tun4Packet extends TunPacket {
         return calculateChecksum(content()) == 0;
     }
 
-    public static int calculateChecksum(ByteBuf buf) {
+    public static int calculateChecksum(final ByteBuf buf) {
         int sum = 0;
         for (int i = 0; i < INET4_HEADER_LENGTH; i += 2) {
             sum += buf.getUnsignedShort(i);
@@ -169,20 +169,20 @@ public class Tun4Packet extends TunPacket {
     }
 
     @SuppressWarnings({ "java:S107", "UnusedReturnValue" })
-    public static ByteBuf populatePacket(ByteBuf buf,
-                                         int typeOfService,
-                                         int identification,
-                                         int flags,
-                                         int fragmentOffset,
-                                         int timeToLive,
-                                         int protocol,
-                                         boolean calculateChecksum,
-                                         Inet4Address sourceAddress,
-                                         Inet4Address destinationAddress,
-                                         byte[] data) {
+    public static ByteBuf populatePacket(final ByteBuf buf,
+                                         final int typeOfService,
+                                         final int identification,
+                                         final int flags,
+                                         final int fragmentOffset,
+                                         final int timeToLive,
+                                         final int protocol,
+                                         final boolean calculateChecksum,
+                                         final Inet4Address sourceAddress,
+                                         final Inet4Address destinationAddress,
+                                         final byte[] data) {
         // version & ihl
-        int version = 4;
-        int ihl = 5;
+        final int version = 4;
+        final int ihl = 5;
 
         int versionIhl = 0;
         versionIhl |= (version & 0xf) << 4;
@@ -193,7 +193,7 @@ public class Tun4Packet extends TunPacket {
         buf.setShort(INET4_TYPE_OF_SERVICE, typeOfService);
 
         // total length
-        int totalLength = ihl * 4 + data.length;
+        final int totalLength = ihl * 4 + data.length;
         buf.setShort(INET4_TOTAL_LENGTH, totalLength);
 
         // identification
@@ -219,7 +219,7 @@ public class Tun4Packet extends TunPacket {
 
         // header checksum
         if (calculateChecksum) {
-            int headerChecksum = calculateChecksum(buf);
+            final int headerChecksum = calculateChecksum(buf);
             buf.setShort(INET4_HEADER_CHECKSUM, headerChecksum);
         }
 

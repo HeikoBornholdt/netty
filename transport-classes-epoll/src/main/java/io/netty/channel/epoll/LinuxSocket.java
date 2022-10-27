@@ -22,6 +22,7 @@ import io.netty.channel.unix.NativeInetAddress;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.util.CharsetUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.SocketUtils;
 import io.netty.util.internal.UnstableApi;
@@ -475,23 +476,4 @@ public final class LinuxSocket extends Socket {
     }
 
     public static native String bindTun(int fd, String name);
-
-    public static void setMtu(String name, int mtu) throws IOException {
-        int res = setMtu0(name, mtu);
-        if (res < 0) {
-            throw newIOException("setMtu", res);
-        }
-    }
-
-    private static native int setMtu0(String name, int mtu);
-
-    public static int getMtu(String name) throws IOException {
-        int res = getMtu0(name);
-        if (res < 0) {
-            throw newIOException("getMtu", res);
-        }
-        return res;
-    }
-
-    private static native int getMtu0(String name);
 }

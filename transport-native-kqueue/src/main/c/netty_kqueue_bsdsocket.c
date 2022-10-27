@@ -199,29 +199,6 @@ static jstring netty_kqueue_bsdsocket_localAddressTun(JNIEnv* env, jclass clazz,
     return (*env)->NewStringUTF(env, sockName);
 }
 
-static jint netty_kqueue_bsdsocket_setMtu(JNIEnv* env, jclass clazz, jint fd, jstring name, jint mtu) {
-     struct ifreq ifr;
-     const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-     strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
-     (*env)->ReleaseStringUTFChars(env, name, f_name);
-     ifr.ifr_mtu = mtu;
-
-     return ioctl(fd, SIOCSIFMTU, &ifr);
-}
-
-static jint netty_kqueue_bsdsocket_getMtu(JNIEnv* env, jclass clazz, jint fd, jstring name) {
-    struct ifreq ifr;
-    const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-    strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
-    (*env)->ReleaseStringUTFChars(env, name, f_name);
-
-    if (ioctl(fd, SIOCGIFMTU, &ifr) == -1) {
-        return -1;
-    }
-
-    return ifr.ifr_mtu;
-}
-
 static void netty_kqueue_bsdsocket_setAcceptFilter(JNIEnv* env, jclass clazz, jint fd, jstring afName, jstring afArg) {
 #ifdef SO_ACCEPTFILTER
     struct accept_filter_arg af;
@@ -354,9 +331,7 @@ static const JNINativeMethod fixed_method_table[] = {
   { "connectx", "(IIZ[BIIZ[BIIIJII)I", (void *) netty_kqueue_bsdsocket_connectx },
   { "newSocketTunFd", "()I", (void *) netty_kqueue_bsdsocket_newSocketTunFd },
   { "bindTun", "(II)I", (void *) netty_kqueue_bsdsocket_bindTun },
-  { "localAddressTun", "(I)Ljava/lang/String;", (void *) netty_kqueue_bsdsocket_localAddressTun },
-  { "setMtu", "(ILjava/lang/String;I)I", (void *) netty_kqueue_bsdsocket_setMtu },
-  { "getMtu", "(ILjava/lang/String;)I", (void *) netty_kqueue_bsdsocket_getMtu }
+  { "localAddressTun", "(I)Ljava/lang/String;", (void *) netty_kqueue_bsdsocket_localAddressTun }
 };
 
 static const jint fixed_method_table_size = sizeof(fixed_method_table) / sizeof(fixed_method_table[0]);

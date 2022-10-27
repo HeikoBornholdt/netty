@@ -34,7 +34,6 @@
 #include <linux/if_tun.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 #include "netty_epoll_linuxsocket.h"
 #include "netty_unix_errors.h"
 #include "netty_unix_filedescriptor.h"
@@ -645,7 +644,7 @@ static jstring netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint f
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
     if (name != NULL) {
         const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-        (*env)->ReleaseStringUTFChars(env, name, f_name); // FIXME: wir releasen zu früh. vielleicht eine zeile runter?
+        (*env)->ReleaseStringUTFChars(env, name, f_name);
         strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
     }
 
@@ -655,37 +654,6 @@ static jstring netty_epoll_linuxsocket_bindTun(JNIEnv* env, jclass clazz, jint f
     }
 
     return (*env)->NewStringUTF(env, ifr.ifr_name);
-}
-
-static jint netty_epoll_linuxsocket_setMtu(JNIEnv* env, jclass clazz, jstring name, jint mtu) {
-    struct ifreq ifr;
-    const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-    strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
-    (*env)->ReleaseStringUTFChars(env, name, f_name);
-    ifr.ifr_mtu = mtu;
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    int res = ioctl(sock, SIOCSIFMTU, &ifr);
-    close(sock);
-
-    return res;
-}
-
-static jint netty_epoll_linuxsocket_getMtu(JNIEnv* env, jclass clazz, jstring name) {
-    struct ifreq ifr;
-    const char* f_name = (*env)->GetStringUTFChars(env, name, 0);
-    strncpy(ifr.ifr_name, f_name, IFNAMSIZ);
-    (*env)->ReleaseStringUTFChars(env, name, f_name);
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    int res = ioctl(sock, SIOCGIFMTU, &ifr);
-    close(sock);
-
-    if (res == -1) {
-        return -1;
-    }
-
-    return ifr.ifr_mtu;
 }
 
 
@@ -766,9 +734,7 @@ static const JNINativeMethod fixed_method_table[] = {
   { "isUdpGro", "(I)I", (void *) netty_epoll_linuxsocket_isUdpGro },
   { "setUdpGro", "(II)V", (void *) netty_epoll_linuxsocket_setUdpGro },
   { "newSocketTunFd", "()I", (void *) netty_epoll_linuxsocket_openTunFd },
-  { "bindTun", "(ILjava/lang/String;)Ljava/lang/String;", (void *) netty_epoll_linuxsocket_bindTun },
-  { "setMtu0", "(Ljava/lang/String;I)I", (void *) netty_epoll_linuxsocket_setMtu },
-  { "getMtu0", "(Ljava/lang/String;)I", (void *) netty_epoll_linuxsocket_getMtu }
+  { "bindTun", "(ILjava/lang/String;)Ljava/lang/String;", (void *) netty_epoll_linuxsocket_bindTun }
 
   // "sendFile" has a dynamic signature
 };

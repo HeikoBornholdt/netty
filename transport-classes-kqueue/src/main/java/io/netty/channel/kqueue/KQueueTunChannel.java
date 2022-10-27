@@ -17,6 +17,7 @@ package io.netty.channel.kqueue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.Tun4Packet;
@@ -36,7 +37,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
-import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
 /**
  * {@link DatagramChannel} implementation that uses linux Kqueue Edge-Triggered Mode for
@@ -141,11 +141,6 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
     }
 
     @Override
-    public int mtu() throws IOException {
-        return socket.getMtu(((TunAddress) this.local).ifName());
-    }
-
-    @Override
     protected AbstractKQueueUnsafe newUnsafe() {
         return new KQueueTunChannelUnsafe();
     }
@@ -155,11 +150,6 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
         socket.bindTun(local);
         this.local = socket.localAddressTun();
         active = true;
-
-        final int mtu = config.getOption(TUN_MTU);
-        if (mtu > 0) {
-            socket.setMtu(((TunAddress) this.local).ifName(), mtu);
-        }
     }
 
     final class KQueueTunChannelUnsafe extends AbstractKQueueUnsafe {
