@@ -46,8 +46,8 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
                     StringUtil.simpleClassName(ByteBuf.class) + ')';
-    static final int AF_INET = 2; // sys/socket.h
-    static final int AF_INET6 = 30; // sys/socket.h
+    static final int AF_INET = 2; // FIXME: read from C?
+    static final int AF_INET6 = 30; // FIXME: read from C?
     private final KQueueTunChannelConfig config;
 
     public KQueueTunChannel() {

@@ -45,7 +45,7 @@ import static io.netty.util.CharsetUtil.US_ASCII;
 @UnstableApi
 public final class LinuxSocket extends Socket {
     static final InetAddress INET6_ANY = unsafeInetAddrByName("::");
-    static final int IFNAMSIZ = 16; // net/if.h
+    static final int IFNAMSIZ = 16; // FIXME: read from C?
     private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION =
             new IllegalArgumentException("Device name must be an ASCII string shorter than " + IFNAMSIZ + " characters or null.");
     private static final InetAddress INET_ANY = unsafeInetAddrByName("0.0.0.0");
