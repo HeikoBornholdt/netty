@@ -27,14 +27,16 @@ import java.net.UnknownHostException;
  */
 public class Tun6Packet extends TunPacket {
     public static final int INET6_HEADER_LENGTH = 40;
-    // https://datatracker.ietf.org/doc/html/rfc8200#section-3
+    // https://datatracker.ietf.org/doc/html/rfc2460#section-3
     public static final int INET6_VERSION_AND_TRAFFIC_CLASS = 0;
     public static final int INET6_FLOW_LABEL = 1;
     public static final int INET6_PAYLOAD_LENGTH = 4;
     public static final int INET6_NEXT_HEADER = 6;
     public static final int INET6_HOP_LIMIT = 7;
     public static final int INET6_SOURCE_ADDRESS = 8;
+    public static final int INET6_SOURCE_ADDRESS_LENGTH = 16;
     public static final int INET6_DESTINATION_ADDRESS = 24;
+    public static final int INET6_DESTINATION_ADDRESS_LENGTH = 16;
     private InetAddress sourceAddress;
     private InetAddress destinationAddress;
 
@@ -73,8 +75,8 @@ public class Tun6Packet extends TunPacket {
     public InetAddress sourceAddress() {
         if (sourceAddress == null) {
             try {
-                byte[] dst = new byte[16];
-                content().getBytes(INET6_SOURCE_ADDRESS, dst, 0, 16);
+                byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
+                content().getBytes(INET6_SOURCE_ADDRESS, dst, 0, INET6_SOURCE_ADDRESS_LENGTH);
                 sourceAddress = Inet6Address.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code
@@ -89,8 +91,8 @@ public class Tun6Packet extends TunPacket {
     public InetAddress destinationAddress() {
         if (destinationAddress == null) {
             try {
-                byte[] dst = new byte[16];
-                content().getBytes(INET6_DESTINATION_ADDRESS, dst, 0, 16);
+                byte[] dst = new byte[INET6_SOURCE_ADDRESS_LENGTH];
+                content().getBytes(INET6_DESTINATION_ADDRESS, dst, 0, INET6_DESTINATION_ADDRESS_LENGTH);
                 destinationAddress = Inet6Address.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code

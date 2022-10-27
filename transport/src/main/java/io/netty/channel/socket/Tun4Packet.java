@@ -51,7 +51,9 @@ public class Tun4Packet extends TunPacket {
     public static final int INET4_PROTOCOL = 9;
     public static final int INET4_HEADER_CHECKSUM = 10;
     public static final int INET4_SOURCE_ADDRESS = 12;
+    public static final int INET4_SOURCE_ADDRESS_LENGTH = 4;
     public static final int INET4_DESTINATION_ADDRESS = 16;
+    public static final int INET4_DESTINATION_ADDRESS_LENGTH = 4;
     private InetAddress sourceAddress;
     private InetAddress destinationAddress;
 
@@ -109,8 +111,8 @@ public class Tun4Packet extends TunPacket {
     public InetAddress sourceAddress() {
         if (sourceAddress == null) {
             try {
-                byte[] dst = new byte[4];
-                content().getBytes(INET4_SOURCE_ADDRESS, dst, 0, 4);
+                byte[] dst = new byte[INET4_SOURCE_ADDRESS_LENGTH];
+                content().getBytes(INET4_SOURCE_ADDRESS, dst, 0, INET4_SOURCE_ADDRESS_LENGTH);
                 sourceAddress = Inet4Address.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code
@@ -125,8 +127,8 @@ public class Tun4Packet extends TunPacket {
     public InetAddress destinationAddress() {
         if (destinationAddress == null) {
             try {
-                byte[] dst = new byte[4];
-                content().getBytes(INET4_DESTINATION_ADDRESS, dst, 0, 4);
+                byte[] dst = new byte[INET4_DESTINATION_ADDRESS_LENGTH];
+                content().getBytes(INET4_DESTINATION_ADDRESS, dst, 0, INET4_DESTINATION_ADDRESS_LENGTH);
                 destinationAddress = Inet4Address.getByAddress(dst);
             } catch (UnknownHostException e) {
                 // unreachable code
