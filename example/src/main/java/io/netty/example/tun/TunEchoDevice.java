@@ -34,10 +34,30 @@ import java.util.Arrays;
 
 import static io.netty.channel.socket.TunChannelOption.TUN_MTU;
 
+/**
+ * Creates a TUN device that echoes all received IP packets.
+ * <p/>
+ * <h2>Usage Example:</h2>
+ *
+ * <pre>
+ *     ./run-example tun-echo-device -Daddress=10.10.10.10 -Dnetmask=24 -Dmtu=1500
+ * </pre>
+ *
+ * In a second shell:
+ * <pre>
+ *     iperf3 --server
+ * </pre>
+ *
+ * In a third shell:
+ * <pre>
+ *     iperf3 --client 10.10.10.11
+ * </pre>
+ */
 public class TunEchoDevice {
     static final String NAME = System.getProperty("name", null);
     static final InetAddress ADDRESS;
     static final int NETMASK = Integer.parseInt(System.getProperty("netmask", "24"));
+    static final int MTU = Integer.parseInt(System.getProperty("mtu", "1500"));
 
     static {
         try {
@@ -48,12 +68,6 @@ public class TunEchoDevice {
     }
 
     public static void main(String[] args) throws Exception {
-//        for (int i = 0; i < 10; i++) {
-//            System.out.println("Wait " + (10 - i) + "s...");
-//            Thread.sleep(1000);
-//        }
-//        System.out.println("geht los");
-
         EventLoopGroup group;
         Class<? extends Channel> channelClass;
 //        if (PlatformDependent.isOsx()) {
@@ -72,7 +86,7 @@ public class TunEchoDevice {
             Bootstrap b = new Bootstrap()
                     .group(group)
                     .channel(channelClass)
-                    .option(TUN_MTU, 1200)
+                    .option(TUN_MTU, MTU)
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
                         protected void initChannel(Channel ch) {
