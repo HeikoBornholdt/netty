@@ -21,7 +21,6 @@ import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
-import io.netty.channel.socket.TunAddress;
 import io.netty.channel.socket.TunChannel;
 import io.netty.channel.socket.TunPacket;
 import io.netty.channel.unix.Errors;
@@ -35,10 +34,6 @@ import java.net.SocketAddress;
 
 import static io.netty.channel.epoll.LinuxSocket.newSocketTun;
 
-/**
- * {@link TunChannel} implementation that uses linux EPOLL Edge-Triggered Mode for maximal
- * performance.
- */
 public class EpollTunChannel extends AbstractEpollChannel implements TunChannel {
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(TunPacket.class) + ", " +
@@ -144,17 +139,12 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
     }
 
     @Override
-    public TunAddress localAddress() {
-        return (TunAddress) super.localAddress();
-    }
-
-    @Override
     protected AbstractEpollUnsafe newUnsafe() {
         return new EpollTunChannelUnsafe();
     }
 
     @Override
-    protected void doRegister() {
+    protected void doRegister() throws Exception {
         // do nothing
     }
 
@@ -199,7 +189,7 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
                             if (e.expectedErr() == Errors.ERROR_ECONNREFUSED_NEGATIVE) {
                                 PortUnreachableException error = new PortUnreachableException(e.getMessage());
                                 error.initCause(e);
-                                throw error;
+                                throw  error;
                             }
                             throw e;
                         }
@@ -210,13 +200,18 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
                             break;
                         }
 
-                        final int version = byteBuf.getUnsignedByte(0) >> 4;
+                        // FIXME: extract ip version
+                        //byteBuf.readerIndex(4); // FIXME: ja?
+                        // FIXME: remove header?
+
+                        final int version = (byteBuf.getByte(0) & 0xff) >> 4;
                         if (version == 4) {
                             packet = new Tun4Packet(byteBuf);
                         } else if (version == 6) {
                             packet = new Tun6Packet(byteBuf);
                         } else {
-                            throw new IOException("Unknown internet protocol: " + version);
+                            // FIXME: throw channel exception?
+                            throw new IOException("Unknown protocol: " + version);
                         }
 
                         allocHandle.incMessagesRead(1);

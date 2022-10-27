@@ -19,10 +19,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.Tun4Packet;
 import io.netty.channel.socket.Tun6Packet;
-import io.netty.channel.socket.TunAddress;
 import io.netty.channel.socket.TunChannel;
 import io.netty.channel.socket.TunPacket;
 import io.netty.channel.unix.Errors;
@@ -38,10 +36,6 @@ import java.nio.ByteBuffer;
 
 import static io.netty.channel.kqueue.BsdSocket.newSocketTun;
 
-/**
- * {@link DatagramChannel} implementation that uses linux Kqueue Edge-Triggered Mode for
- * maximal performance.
- */
 // FIXME: close function richtig implementiert?
 public class KQueueTunChannel extends AbstractKQueueMessageChannel implements TunChannel {
     private static final String EXPECTED_TYPES =
@@ -54,6 +48,11 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
     public KQueueTunChannel() {
         super(null, newSocketTun(), false);
         this.config = new KQueueTunChannelConfig(this);
+    }
+
+    @Override
+    protected AbstractKQueueUnsafe newUnsafe() {
+        return new KQueueTunChannelUnsafe();
     }
 
     @Override
@@ -133,16 +132,6 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
     }
 
     @Override
-    public TunAddress localAddress() {
-        return (TunAddress) super.localAddress();
-    }
-
-    @Override
-    protected AbstractKQueueUnsafe newUnsafe() {
-        return new KQueueTunChannelUnsafe();
-    }
-
-    @Override
     protected void doBind(SocketAddress local) throws Exception {
         socket.bindTun(local);
         this.local = socket.localAddressTun();
@@ -200,7 +189,8 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
                         } else if (version == AF_INET6) {
                             packet = new Tun6Packet(byteBuf.slice());
                         } else {
-                            throw new IOException("Unknown internet protocol: " + version);
+                            // FIXME: throw channel exception?
+                            throw new IOException("Unknown protocol: " + version);
                         }
 
                         allocHandle.incMessagesRead(1);
