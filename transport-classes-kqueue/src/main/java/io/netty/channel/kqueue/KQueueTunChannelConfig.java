@@ -46,7 +46,8 @@ public class KQueueTunChannelConfig extends KQueueChannelConfig implements TunCh
         if (!super.setOption(option, value)) {
             if (option == TUN_MTU) {
                 setMtu((Integer) value);
-            } else {
+            }
+            else {
                 return false;
             }
         }

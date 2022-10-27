@@ -58,7 +58,8 @@ public class TunPingDevice {
     static {
         try {
             ADDRESS = InetAddress.getByName(System.getProperty("address", "10.10.10.10"));
-        } catch (UnknownHostException e) {
+        }
+        catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
     }
@@ -85,35 +86,36 @@ public class TunPingDevice {
 //        }
 
         try {
-            Bootstrap b = new Bootstrap()
+            final Bootstrap b = new Bootstrap()
                     .group(group)
                     .channel(channelClass)
                     .option(TUN_MTU, 1200)
                     .handler(new ChannelInitializer<Channel>() {
                         @Override
-                        protected void initChannel(Channel ch) {
-                            ChannelPipeline p = ch.pipeline();
+                        protected void initChannel(final Channel ch) {
+                            final ChannelPipeline p = ch.pipeline();
 
                             p.addLast(new Ping4Handler());
                             p.addLast(new Ping6Handler());
                         }
                     });
-            Channel ch = b.bind(new TunAddress(NAME)).syncUninterruptibly().channel();
+            final Channel ch = b.bind(new TunAddress(NAME)).syncUninterruptibly().channel();
 
-            String name = ch.localAddress().toString();
+            final String name = ch.localAddress().toString();
             System.out.println("TUN device created: " + name);
 
             if (PlatformDependent.isOsx()) {
                 if (ADDRESS instanceof Inet6Address) {
                     exec("/sbin/ifconfig", name, "inet6", "add", ADDRESS.getHostAddress() + "/" + NETMASK);
                     exec("/sbin/route", "add", "-inet6", ADDRESS.getHostAddress(), "-iface", name);
-                } else {
+                }
+                else {
                     exec("/sbin/ifconfig", name, "add", ADDRESS.getHostAddress(), ADDRESS.getHostAddress());
                     exec("/sbin/route", "add", "-net", ADDRESS.getHostAddress() + '/' + NETMASK, "-iface", name);
                 }
-            } else {
-                String version = ADDRESS instanceof Inet6Address ? "-6" : "-4";
-                exec("/sbin/ip", version, "addr", "add", ADDRESS.getHostAddress() + '/' + NETMASK, "dev", name);
+            }
+            else {
+                exec("/sbin/ip", ADDRESS instanceof Inet6Address ? "-6" : "-4", "addr", "add", ADDRESS.getHostAddress() + '/' + NETMASK, "dev", name);
                 exec("/sbin/ip", "link", "set", "dev", name, "up");
             }
 
@@ -121,21 +123,23 @@ public class TunPingDevice {
             System.out.println("All ICMP echo ping requests addressed to this subnet should now be replied.");
 
             ch.closeFuture().syncUninterruptibly();
-        } catch (IOException e) {
+        }
+        catch (final IOException e) {
             throw new RuntimeException(e);
-        } finally {
+        }
+        finally {
             group.shutdownGracefully();
         }
     }
 
-    private static void exec(String... command) throws IOException {
+    private static void exec(final String... command) throws IOException {
         try {
-            int exitCode = Runtime.getRuntime().exec(command).waitFor();
+            final int exitCode = Runtime.getRuntime().exec(command).waitFor();
             if (exitCode != 0) {
-                CharSequence arguments = StringUtil.join(" ", Arrays.asList(command));
-                throw new IOException("Executing `" + arguments + "` returned non-zero exit code (" + exitCode + ").");
+                throw new IOException("Executing `" + StringUtil.join(" ", Arrays.asList(command)) + "` returned non-zero exit code (" + exitCode + ").");
             }
-        } catch (InterruptedException e) {
+        }
+        catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }

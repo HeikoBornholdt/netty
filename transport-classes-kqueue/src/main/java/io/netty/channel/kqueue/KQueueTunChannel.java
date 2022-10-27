@@ -78,8 +78,7 @@ public class KQueueTunChannel extends AbstractKQueueMessageChannel implements Tu
         }
 
         // add address family header
-        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten)
-        // verwenden können. Gibt es da ne bessere alternative?
+        // FIXME: composite buffer sorgt dafür, dass wir niemals writeAddress (siehe unten) verwenden können. Gibt es da ne bessere alternative?
         data = alloc().compositeDirectBuffer(2).
                 addComponents(true, alloc().directBuffer(4).writeInt(version), data);
 

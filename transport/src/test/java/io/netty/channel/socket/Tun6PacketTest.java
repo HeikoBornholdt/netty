@@ -187,9 +187,6 @@ class Tun6PacketTest {
 
     @Test
     void testToString() {
-        assertEquals(
-                "Tun6Packet[len=117, src=fe80:0:0:0:1cdf:174b:91df:6407, dst=fe80:0:0:0:66:445e:bedf:f843]",
-                packet.toString()
-        );
+        assertEquals("Tun6Packet[len=117, src=fe80:0:0:0:1cdf:174b:91df:6407, dst=fe80:0:0:0:66:445e:bedf:f843]", packet.toString());
     }
 }
