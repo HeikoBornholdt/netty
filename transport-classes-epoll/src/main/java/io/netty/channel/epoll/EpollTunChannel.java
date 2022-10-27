@@ -150,7 +150,7 @@ public class EpollTunChannel extends AbstractEpollChannel implements TunChannel 
 
     @Override
     protected void doBind(SocketAddress local) throws Exception {
-        // doRegister muss nach bindTun erfolgen, weil sonst epollCtlAdd nicht funktioniert
+        // doRegister muss nach bindTun erfolen, weil sonst epollCtlAdd nicht funktioniert
         this.local = socket.bindTun(local);
         super.doRegister();
         active = true;
