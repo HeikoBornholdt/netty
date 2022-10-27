@@ -15,8 +15,10 @@
  */
 package io.netty.channel.kqueue;
 
+import io.netty.channel.ChannelException;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.IovArray;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
@@ -25,11 +27,13 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import static io.netty.channel.kqueue.AcceptFilter.PLATFORM_UNSUPPORTED;
 import static io.netty.channel.kqueue.Native.CONNECT_TCP_FASTOPEN;
 import static io.netty.channel.unix.Errors.ERRNO_EINPROGRESS_NEGATIVE;
 import static io.netty.channel.unix.Errors.ioResult;
+import static io.netty.channel.unix.Errors.newIOException;
 import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
@@ -37,6 +41,8 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  * A socket which provides access BSD native methods.
  */
 final class BsdSocket extends Socket {
+    private static final String TUN_DEVICE_PREFIX = "utun";
+    private static final IllegalArgumentException TUN_ILLEGAL_NAME_EXCEPTION = new IllegalArgumentException("Device name must be 'utun<index>' or null.");
 
     // These limits are just based on observations. I couldn't find anything in header files which formally
     // define these limits.
@@ -52,6 +58,10 @@ final class BsdSocket extends Socket {
 
     BsdSocket(int fd) {
         super(fd);
+    }
+
+    BsdSocket(int fd, boolean ipv6) {
+        super(fd, ipv6);
     }
 
     void setAcceptFilter(AcceptFilter acceptFilter) throws IOException {
@@ -252,4 +262,51 @@ final class BsdSocket extends Socket {
     private static native void setSndLowAt(int fd, int lowAt) throws IOException;
 
     private static native void setTcpFastOpen(int fd, int enableFastOpen) throws IOException;
+
+    public static BsdSocket newSocketTun() {
+        int res = newSocketTunFd();
+        if (res < 0) {
+            throw new ChannelException(newIOException("newSocketTun", res));
+        }
+        return new BsdSocket(res, false);
+    }
+
+    private static native int newSocketTunFd();
+
+    public void bindTun(final SocketAddress socketAddress) throws IOException {
+        if (socketAddress instanceof TunAddress) {
+            TunAddress addr = (TunAddress) socketAddress;
+            final int index;
+            if (addr.ifName() != null) {
+                if (addr.ifName().startsWith(TUN_DEVICE_PREFIX)) {
+                    try {
+                        index = Integer.parseInt(addr.ifName().substring(TUN_DEVICE_PREFIX.length()));
+                    }
+                    catch (final NumberFormatException e) {
+                        throw TUN_ILLEGAL_NAME_EXCEPTION;
+                    }
+                }
+                else {
+                    throw TUN_ILLEGAL_NAME_EXCEPTION;
+                }
+            }
+            else {
+                index = 0;
+            }
+            int res = bindTun(intValue(), index);
+            if (res < 0) {
+                throw newIOException("bind", res);
+            }
+        } else {
+            throw new Error("Unexpected SocketAddress implementation " + socketAddress);
+        }
+    }
+
+    public static native int bindTun(final int fd, final int index);
+
+    public SocketAddress localAddressTun() {
+        return new TunAddress(localAddressTun(intValue()));
+    }
+
+    public static native String localAddressTun(final int fd);
 }
