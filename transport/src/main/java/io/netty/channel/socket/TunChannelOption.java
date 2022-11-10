@@ -20,7 +20,7 @@ import io.netty.channel.ChannelOption;
 /**
  * Provides {@link ChannelOption}s for {@link TunChannel}s.
  */
-public final class TunChannelOption<T> extends ChannelOption<T> {
+public class TunChannelOption<T> extends ChannelOption<T> {
     /**
      * Defines MTU for the created tun device.
      * <p>
@@ -31,7 +31,7 @@ public final class TunChannelOption<T> extends ChannelOption<T> {
      */
     public static final ChannelOption<Integer> TUN_MTU = valueOf("TUN_MTU");
 
-    private TunChannelOption() {
+    protected TunChannelOption() {
         super(null);
     }
 }
